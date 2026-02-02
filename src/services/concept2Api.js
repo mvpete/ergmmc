@@ -1,11 +1,12 @@
 const BASE_URL = 'https://log.concept2.com'
 const AUTH_URL = `${BASE_URL}/oauth/authorize`
-const TOKEN_URL = `${BASE_URL}/oauth/access_token`
 const API_URL = `${BASE_URL}/api`
 
 const CLIENT_ID = import.meta.env.VITE_CONCEPT2_CLIENT_ID
-const CLIENT_SECRET = import.meta.env.VITE_CONCEPT2_CLIENT_SECRET
 const REDIRECT_URI = import.meta.env.VITE_CONCEPT2_REDIRECT_URI
+
+// Use API endpoint for token exchange (keeps secret secure)
+const TOKEN_API = '/api/token'
 
 export function getAuthUrl() {
   const params = new URLSearchParams({
@@ -18,18 +19,12 @@ export function getAuthUrl() {
 }
 
 export async function exchangeCodeForToken(code) {
-  const response = await fetch(TOKEN_URL, {
+  const response = await fetch(TOKEN_API, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/json'
     },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      redirect_uri: REDIRECT_URI,
-      code
-    })
+    body: JSON.stringify({ code })
   })
 
   if (!response.ok) {
@@ -43,16 +38,16 @@ export async function exchangeCodeForToken(code) {
 }
 
 async function refreshAccessToken(refreshToken) {
-  const response = await fetch(TOKEN_URL, {
+  // Note: Refresh still needs to go through the API endpoint
+  // For now, we'll keep the direct call but you may want to add a refresh endpoint too
+  const response = await fetch(TOKEN_API, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/json'
     },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      refresh_token: refreshToken
+    body: JSON.stringify({ 
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token'
     })
   })
 
