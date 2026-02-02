@@ -16,12 +16,60 @@
 
     <template v-else>
       <div class="lifetime-section">
-        <div class="lifetime-label">Lifetime Meters</div>
+        <div class="lifetime-label">
+          <svg class="erg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="24" height="24">
+            <defs>
+              <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#357ABD;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <rect x="10" y="45" width="70" height="4" rx="2" fill="url(#grad1)"/>
+            <rect x="35" y="40" width="12" height="8" rx="2" fill="#2C3E50"/>
+            <line x1="48" y1="44" x2="75" y2="44" stroke="#E74C3C" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="77" cy="44" r="3" fill="#E74C3C"/>
+            <circle cx="85" cy="44" r="12" fill="none" stroke="url(#grad1)" stroke-width="3"/>
+            <circle cx="85" cy="44" r="8" fill="none" stroke="#4A90E2" stroke-width="2"/>
+            <line x1="85" y1="36" x2="85" y2="52" stroke="#4A90E2" stroke-width="1.5"/>
+            <line x1="77" y1="44" x2="93" y2="44" stroke="#4A90E2" stroke-width="1.5"/>
+            <rect x="8" y="50" width="8" height="10" rx="1" fill="#2C3E50"/>
+            <circle cx="41" cy="32" r="4" fill="#34495E"/>
+            <line x1="41" y1="36" x2="41" y2="44" stroke="#34495E" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="41" y1="38" x2="48" y2="40" stroke="#34495E" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="41" y1="44" x2="36" y2="54" stroke="#34495E" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="41" y1="44" x2="46" y2="54" stroke="#34495E" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          Lifetime Meters
+        </div>
         <div class="lifetime-value">{{ formattedLifetime }}</div>
       </div>
 
       <div class="year-section">
-        <h2 class="year-title">{{ dateRangeLabel }}</h2>
+        <h2 class="year-title">
+          <svg class="erg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20">
+            <defs>
+              <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#357ABD;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <rect x="10" y="45" width="70" height="4" rx="2" fill="url(#grad2)"/>
+            <rect x="35" y="40" width="12" height="8" rx="2" fill="#2C3E50"/>
+            <line x1="48" y1="44" x2="75" y2="44" stroke="#E74C3C" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="77" cy="44" r="3" fill="#E74C3C"/>
+            <circle cx="85" cy="44" r="12" fill="none" stroke="url(#grad2)" stroke-width="3"/>
+            <circle cx="85" cy="44" r="8" fill="none" stroke="#4A90E2" stroke-width="2"/>
+            <line x1="85" y1="36" x2="85" y2="52" stroke="#4A90E2" stroke-width="1.5"/>
+            <line x1="77" y1="44" x2="93" y2="44" stroke="#4A90E2" stroke-width="1.5"/>
+            <rect x="8" y="50" width="8" height="10" rx="1" fill="#2C3E50"/>
+            <circle cx="41" cy="32" r="4" fill="#34495E"/>
+            <line x1="41" y1="36" x2="41" y2="44" stroke="#34495E" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="41" y1="38" x2="48" y2="40" stroke="#34495E" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="41" y1="44" x2="36" y2="54" stroke="#34495E" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="41" y1="44" x2="46" y2="54" stroke="#34495E" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          {{ dateRangeLabel }}
+        </h2>
         <CircularProgress
           :percentage="percentage"
           :size="280"
@@ -36,6 +84,25 @@
           </div>
           <div class="expected">Expected: {{ formattedExpected }}</div>
         </CircularProgress>
+        
+        <div class="stats-table">
+          <div class="stat-row">
+            <span class="stat-label">Today</span>
+            <span class="stat-value">{{ formattedToday }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">This Week</span>
+            <span class="stat-value">{{ formattedWeek }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">This Month</span>
+            <span class="stat-value">{{ formattedMonth }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">This Year</span>
+            <span class="stat-value">{{ formattedYear }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="badges-section">
@@ -68,7 +135,11 @@ const props = defineProps({
   startDate: { type: String, default: '' },
   endDate: { type: String, default: '' },
   loading: { type: Boolean, default: false },
-  error: { type: String, default: null }
+  error: { type: String, default: null },
+  metersToday: { type: Number, default: 0 },
+  metersWeek: { type: Number, default: 0 },
+  metersMonth: { type: Number, default: 0 },
+  metersYear: { type: Number, default: 0 }
 })
 
 defineEmits(['retry'])
@@ -146,6 +217,10 @@ const formattedMeters = computed(() => props.totalMeters.toLocaleString())
 const formattedGoal = computed(() => props.goal.toLocaleString())
 const formattedExpected = computed(() => expectedMeters.value.toLocaleString())
 const formattedLifetime = computed(() => props.lifetimeMeters.toLocaleString())
+const formattedToday = computed(() => props.metersToday.toLocaleString())
+const formattedWeek = computed(() => props.metersWeek.toLocaleString())
+const formattedMonth = computed(() => props.metersMonth.toLocaleString())
+const formattedYear = computed(() => props.metersYear.toLocaleString())
 </script>
 
 <style scoped>
@@ -189,11 +264,60 @@ const formattedLifetime = computed(() => props.lifetimeMeters.toLocaleString())
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.year-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.erg-icon {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .lifetime-value {
   font-size: 2.5rem;
   font-weight: 700;
+  color: #f9fafb;
+}
+
+.stats-table {
+  margin-top: 2rem;
+  background: #1f2937;
+  border-radius: 12px;
+  padding: 1rem;
+  min-width: 280px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #374151;
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 1.125rem;
+  font-weight: 600;
   color: #f9fafb;
 }
 

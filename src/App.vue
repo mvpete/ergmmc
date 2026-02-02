@@ -32,6 +32,10 @@
           :goal="settings.goal"
           :start-date="settings.startDate"
           :end-date="settings.endDate"
+          :meters-today="metersToday"
+          :meters-week="metersWeek"
+          :meters-month="metersMonth"
+          :meters-year="metersYear"
           :loading="loading"
           :error="error"
           @retry="loadData"
@@ -115,6 +119,64 @@ const filteredWorkouts = computed(() => {
 
 const totalMeters = computed(() => calculateTotalMeters(filteredWorkouts.value))
 const lifetimeMeters = computed(() => calculateTotalMeters(allWorkouts.value))
+
+const metersToday = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayWorkouts = allWorkouts.value.filter(w => {
+    const dateStr = w.date?.split(' ')[0] || w.date
+    const date = parseLocalDate(dateStr)
+    date.setHours(0, 0, 0, 0)
+    return date.getTime() === today.getTime()
+  })
+  return calculateTotalMeters(todayWorkouts)
+})
+
+const metersWeek = computed(() => {
+  const today = new Date()
+  const startOfWeek = new Date(today)
+  startOfWeek.setDate(today.getDate() - today.getDay()) // Sunday
+  startOfWeek.setHours(0, 0, 0, 0)
+  const endOfWeek = new Date(startOfWeek)
+  endOfWeek.setDate(startOfWeek.getDate() + 6)
+  endOfWeek.setHours(23, 59, 59, 999)
+  
+  const weekWorkouts = allWorkouts.value.filter(w => {
+    const dateStr = w.date?.split(' ')[0] || w.date
+    const date = parseLocalDate(dateStr)
+    return date >= startOfWeek && date <= endOfWeek
+  })
+  return calculateTotalMeters(weekWorkouts)
+})
+
+const metersMonth = computed(() => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = today.getMonth()
+  const startOfMonth = new Date(year, month, 1)
+  const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999)
+  
+  const monthWorkouts = allWorkouts.value.filter(w => {
+    const dateStr = w.date?.split(' ')[0] || w.date
+    const date = parseLocalDate(dateStr)
+    return date >= startOfMonth && date <= endOfMonth
+  })
+  return calculateTotalMeters(monthWorkouts)
+})
+
+const metersYear = computed(() => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const startOfYear = new Date(year, 0, 1)
+  const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999)
+  
+  const yearWorkouts = allWorkouts.value.filter(w => {
+    const dateStr = w.date?.split(' ')[0] || w.date
+    const date = parseLocalDate(dateStr)
+    return date >= startOfYear && date <= endOfYear
+  })
+  return calculateTotalMeters(yearWorkouts)
+})
 
 function connect() {
   window.location.href = getAuthUrl()
