@@ -119,17 +119,20 @@ async function apiRequest(endpoint) {
 
   let response
   try {
-    response = await fetch(`${API_URL}${endpoint}`, {
+    // Use the proxy endpoint to avoid CORS issues
+    const proxyUrl = `/api/token?path=${encodeURIComponent(endpoint)}`
+    response = await fetch(proxyUrl, {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json'
       }
     })
-    console.log(`API Request: ${endpoint}`)
+    console.log(`API Request (via proxy): ${endpoint}`)
     console.log(`Status: ${response.status} ${response.statusText}`)
   } catch (err) {
-    console.error('Network error calling Concept2 API:', err)
-    throw new Error(`NETWORK ERROR fetching ${endpoint}: ${err.message || err}. This is likely a CORS issue.`)
+    console.error('Network error calling proxy:', err)
+    throw new Error(`Network error fetching ${endpoint}: ${err.message || err}`)
   }
 
   if (!response.ok) {
@@ -144,7 +147,9 @@ async function apiRequest(endpoint) {
           saveToken(newTokenData)
 
           // Retry the request
-          const retryResponse = await fetch(`${API_URL}${endpoint}`, {
+          const proxyUrl = `/api/token?path=${encodeURIComponent(endpoint)}`
+          const retryResponse = await fetch(proxyUrl, {
+            method: 'GET',
             headers: {
               'Authorization': `Bearer ${newTokenData.access_token}`,
               'Accept': 'application/json'

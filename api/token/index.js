@@ -1,15 +1,15 @@
 const fetch = require('node-fetch');
 
 module.exports = async function (context, req) {
-  context.log('Token exchange endpoint called');
+  context.log(`Token/Proxy endpoint called: ${req.method} ${req.url}`);
 
   // Enable CORS
   context.res = {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     }
   };
 
@@ -19,12 +19,68 @@ module.exports = async function (context, req) {
     return;
   }
 
-  if (req.method !== 'POST') {
-    context.res.status = 405;
-    context.res.body = { error: 'Method not allowed' };
+  // GET requests are for API proxying
+  if (req.method === 'GET') {
+    return handleApiProxy(context, req);
+  }
+
+  // POST requests are for token exchange
+  if (req.method === 'POST') {
+    return handleTokenExchange(context, req);
+  }
+
+  context.res.status = 405;
+  context.res.body = { error: 'Method not allowed' };
+};
+
+// Handle API proxy requests (GET)
+async function handleApiProxy(context, req) {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    context.res.status = 401;
+    context.res.body = { error: 'Authorization header required' };
     return;
   }
 
+  const path = req.query.path;
+  if (!path) {
+    context.res.status = 400;
+    context.res.body = { error: 'Path parameter required' };
+    return;
+  }
+
+  try {
+    const apiUrl = `https://log.concept2.com/api${path}`;
+    context.log('Proxying request to:', apiUrl);
+
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': authorization,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      context.log.error('Concept2 API error:', response.status, errorText);
+      context.res.status = response.status;
+      context.res.body = { error: errorText };
+      return;
+    }
+
+    const data = await response.json();
+    context.res.status = 200;
+    context.res.body = data;
+  } catch (error) {
+    context.log.error('Error proxying request:', error);
+    context.res.status = 500;
+    context.res.body = { error: error.message };
+  }
+}
+
+// Handle token exchange (POST)
+async function handleTokenExchange(context, req) {
   const { code, refresh_token, grant_type = 'authorization_code' } = req.body;
 
   if (!code && !refresh_token) {
@@ -97,4 +153,4 @@ module.exports = async function (context, req) {
     context.res.status = 500;
     context.res.body = { error: 'Internal server error' };
   }
-};
+}

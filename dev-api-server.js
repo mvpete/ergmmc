@@ -59,6 +59,44 @@ app.post('/api/token', async (req, res) => {
   }
 })
 
+// API proxy endpoint to avoid CORS issues on iOS
+app.get('/api/token', async (req, res) => {
+  const authorization = req.headers.authorization
+  if (!authorization) {
+    return res.status(401).json({ error: 'Authorization header required' })
+  }
+
+  const path = req.query.path
+  if (!path) {
+    return res.status(400).json({ error: 'Path parameter required' })
+  }
+
+  try {
+    const apiUrl = `https://log.concept2.com/api${path}`
+    console.log('Proxying request to:', apiUrl)
+
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': authorization,
+        'Accept': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Concept2 API error:', response.status, errorText)
+      return res.status(response.status).json({ error: errorText })
+    }
+
+    const data = await response.json()
+    res.json(data)
+  } catch (error) {
+    console.error('Error proxying request:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Development API server running on http://localhost:${PORT}`)
