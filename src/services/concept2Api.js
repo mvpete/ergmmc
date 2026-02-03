@@ -146,7 +146,9 @@ async function apiRequest(endpoint) {
       clearToken()
       throw new Error('Session expired. Please reconnect.')
     }
-    throw new Error(`API request failed: ${response.status}`)
+    const errorBody = await response.text()
+    console.error('API request failed:', response.status, errorBody)
+    throw new Error(`API request failed (${response.status}): ${errorBody || 'Unknown error'}`)
   }
 
   return response.json()

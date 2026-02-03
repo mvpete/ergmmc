@@ -227,15 +227,18 @@ async function loadData() {
   try {
     loading.value = true
     error.value = null
+    console.log('Fetching workout results...')
     allWorkouts.value = await fetchAllResults()
+    console.log('Workouts loaded:', allWorkouts.value.length)
   } catch (err) {
+    console.error('Load data error:', err)
     // If token was cleared due to auth failure, kick user out
     if (!isAuthenticated()) {
       authenticated.value = false
       allWorkouts.value = []
       return
     }
-    error.value = err.message || 'Failed to load data'
+    error.value = `Failed to load data: ${err.message}`
   } finally {
     loading.value = false
   }
