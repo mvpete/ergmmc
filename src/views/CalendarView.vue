@@ -328,6 +328,13 @@ const longestStreak = computed(() => {
   margin-bottom: 1rem;
 }
 
+@media (max-width: 640px) {
+  .calendar-header {
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+}
+
 .legend {
   display: flex;
   align-items: center;
@@ -336,9 +343,27 @@ const longestStreak = computed(() => {
   color: #9ca3af;
 }
 
+@media (max-width: 640px) {
+  .legend {
+    gap: 0.25rem;
+    font-size: 0.625rem;
+  }
+}
+
 .legend-squares {
   display: flex;
   gap: 2px;
+}
+
+@media (max-width: 640px) {
+  .legend-squares {
+    gap: 1px;
+  }
+  
+  .legend-squares .square {
+    width: 8px;
+    height: 8px;
+  }
 }
 
 .calendar-stats {
@@ -420,8 +445,9 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .months {
-    font-size: 0.625rem;
-    margin-left: 24px;
+    font-size: 0.5rem;
+    margin-left: 20px;
+    margin-bottom: 0.25rem;
   }
 }
 
@@ -432,7 +458,8 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .months span {
-    min-width: 45px;
+    min-width: 35px;
+    font-size: 0.5rem;
   }
 }
 
@@ -451,8 +478,9 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .weekdays {
-    font-size: 0.5rem;
+    font-size: 0.4rem;
     gap: 1px;
+    margin-right: 2px;
   }
 }
 
@@ -463,8 +491,8 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .weekdays span {
-    height: 10px;
-    line-height: 10px;
+    height: 8px;
+    line-height: 8px;
   }
 }
 
@@ -500,9 +528,9 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .square {
-    width: 10px;
-    height: 10px;
-    border-radius: 1.5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 1px;
   }
 }
 
