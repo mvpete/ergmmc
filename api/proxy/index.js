@@ -1,7 +1,9 @@
 const fetch = require('node-fetch');
 
 module.exports = async function (context, req) {
-  context.log('API proxy endpoint called');
+  context.log('API proxy endpoint called:', req.method, req.url);
+  context.log('Headers:', JSON.stringify(req.headers));
+  context.log('Query:', JSON.stringify(req.query));
 
   // Enable CORS
   context.res = {
@@ -37,7 +39,10 @@ module.exports = async function (context, req) {
   context.log('Authorization header present:', authorization.substring(0, 20) + '...');
 
   const path = req.query.path;
+  context.log('Requested path:', path);
+  
   if (!path) {
+    context.log.error('Missing path parameter');
     context.res.status = 400;
     context.res.body = { error: 'Path parameter required' };
     return;
@@ -63,7 +68,7 @@ module.exports = async function (context, req) {
   try {
     const apiUrl = `https://log.concept2.com/api${path}`;
     context.log('Proxying request to:', apiUrl);
-    context.log('Authorization header received:', authorization);
+    context.log('Authorization header (first 30 chars):', authorization.substring(0, 30) + '...');
 
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -77,7 +82,7 @@ module.exports = async function (context, req) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      context.log.error('Concept2 API error:', response.status, errorText);
+      context.log.error('Concept2 API error response:', response.status, errorText);
       
       // Try to parse error as JSON, otherwise return as text
       let errorBody;
