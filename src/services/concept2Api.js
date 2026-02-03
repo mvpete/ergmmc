@@ -125,12 +125,16 @@ async function apiRequest(endpoint) {
         'Accept': 'application/json'
       }
     })
+    console.log(`API Request: ${endpoint}`)
+    console.log(`Status: ${response.status} ${response.statusText}`)
   } catch (err) {
     console.error('Network error calling Concept2 API:', err)
     throw new Error(`Network error: ${err.message}`)
   }
 
   if (!response.ok) {
+    const errorBody = await response.text()
+    console.log('Response body:', errorBody)
     if (response.status === 401) {
       // Try to refresh and retry once
       const tokenData = getToken()
@@ -158,7 +162,6 @@ async function apiRequest(endpoint) {
       clearToken()
       throw new Error('Session expired. Please reconnect.')
     }
-    const errorBody = await response.text()
     console.error('API request failed:', response.status, errorBody)
     throw new Error(`API request failed (${response.status}): ${errorBody || 'Unknown error'}`)
   }
