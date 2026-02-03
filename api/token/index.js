@@ -37,7 +37,8 @@ module.exports = async function (context, req) {
 async function handleApiProxy(context, req) {
   context.log('Headers received:', JSON.stringify(req.headers));
   
-  const authorization = req.headers.authorization;
+  // Azure Functions may lowercase header names
+  const authorization = req.headers.authorization || req.headers.Authorization;
   if (!authorization) {
     context.log.error('No authorization header found');
     context.res.status = 401;
@@ -74,6 +75,7 @@ async function handleApiProxy(context, req) {
   try {
     const apiUrl = `https://log.concept2.com/api${path}`;
     context.log('Proxying request to:', apiUrl);
+    context.log('Forwarding Authorization:', authorization);
 
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -82,6 +84,8 @@ async function handleApiProxy(context, req) {
         'Accept': 'application/json'
       }
     });
+    
+    context.log('Concept2 API response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
