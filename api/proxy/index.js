@@ -28,11 +28,13 @@ module.exports = async function (context, req) {
   // Azure Functions may lowercase header names
   const authorization = req.headers.authorization || req.headers.Authorization;
   if (!authorization) {
-    context.log.error('No authorization header found');
+    context.log.error('No authorization header found. Headers:', JSON.stringify(req.headers));
     context.res.status = 401;
     context.res.body = { error: 'Authorization header required' };
     return;
   }
+
+  context.log('Authorization header present:', authorization.substring(0, 20) + '...');
 
   const path = req.query.path;
   if (!path) {

@@ -32,6 +32,7 @@ export async function exchangeCodeForToken(code) {
   }
 
   const tokenData = await response.json()
+  console.log('Token exchange response:', tokenData)
   // Store when the token was obtained
   tokenData.obtained_at = Date.now()
   return tokenData
@@ -121,6 +122,7 @@ async function apiRequest(endpoint) {
   try {
     // Use the proxy endpoint to avoid CORS issues
     const proxyUrl = `/api/proxy?path=${encodeURIComponent(endpoint)}`
+    console.log('Making request to proxy with token:', token.substring(0, 20) + '...')
     response = await fetch(proxyUrl, {
       method: 'GET',
       headers: {
@@ -136,7 +138,13 @@ async function apiRequest(endpoint) {
   }
 
   if (!response.ok) {
-    const errorBody = await response.text()
+    let errorBody
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      errorBody = JSON.stringify(await response.json())
+    } else {
+      errorBody = await response.text()
+    }
     console.log('Response body:', errorBody)
     if (response.status === 401) {
       console.log('Got 401, attempting token refresh...')
