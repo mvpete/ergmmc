@@ -129,7 +129,7 @@ async function apiRequest(endpoint) {
     console.log(`Status: ${response.status} ${response.statusText}`)
   } catch (err) {
     console.error('Network error calling Concept2 API:', err)
-    throw new Error(`Network error: ${err.message}`)
+    throw new Error(`NETWORK ERROR fetching ${endpoint}: ${err.message || err}. This is likely a CORS issue.`)
   }
 
   if (!response.ok) {
