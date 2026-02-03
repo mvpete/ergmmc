@@ -71,6 +71,19 @@ app.get('/api/token', async (req, res) => {
     return res.status(400).json({ error: 'Path parameter required' })
   }
 
+  // Security: Validate path to prevent malicious requests
+  // Only allow paths starting with /users/me
+  if (!path.startsWith('/users/me')) {
+    console.warn('Blocked potentially malicious API call:', path)
+    return res.status(403).json({ error: 'Forbidden: Invalid API path' })
+  }
+
+  // Security: Prevent path traversal attacks
+  if (path.includes('..') || path.includes('//')) {
+    console.warn('Blocked path traversal attempt:', path)
+    return res.status(403).json({ error: 'Forbidden: Invalid path format' })
+  }
+
   try {
     const apiUrl = `https://log.concept2.com/api${path}`
     console.log('Proxying request to:', apiUrl)

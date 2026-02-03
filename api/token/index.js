@@ -35,17 +35,39 @@ module.exports = async function (context, req) {
 
 // Handle API proxy requests (GET)
 async function handleApiProxy(context, req) {
+  context.log('Headers received:', JSON.stringify(req.headers));
+  
   const authorization = req.headers.authorization;
   if (!authorization) {
+    context.log.error('No authorization header found');
     context.res.status = 401;
     context.res.body = { error: 'Authorization header required' };
     return;
   }
 
+  context.log('Authorization header:', authorization.substring(0, 20) + '...');
+
   const path = req.query.path;
   if (!path) {
     context.res.status = 400;
     context.res.body = { error: 'Path parameter required' };
+    return;
+  }
+
+  // Security: Validate path to prevent malicious requests
+  // Only allow paths starting with /users/me
+  if (!path.startsWith('/users/me')) {
+    context.log.warn('Blocked potentially malicious API call:', path);
+    context.res.status = 403;
+    context.res.body = { error: 'Forbidden: Invalid API path' };
+    return;
+  }
+
+  // Security: Prevent path traversal attacks
+  if (path.includes('..') || path.includes('//')) {
+    context.log.warn('Blocked path traversal attempt:', path);
+    context.res.status = 403;
+    context.res.body = { error: 'Forbidden: Invalid path format' };
     return;
   }
 
@@ -64,8 +86,17 @@ async function handleApiProxy(context, req) {
     if (!response.ok) {
       const errorText = await response.text();
       context.log.error('Concept2 API error:', response.status, errorText);
+      
+      // Try to parse error as JSON, otherwise return as text
+      let errorBody;
+      try {
+        errorBody = JSON.parse(errorText);
+      } catch {
+        errorBody = { error: errorText };
+      }
+      
       context.res.status = response.status;
-      context.res.body = { error: errorText };
+      context.res.body = errorBody;
       return;
     }
 
@@ -81,13 +112,18 @@ async function handleApiProxy(context, req) {
 
 // Handle token exchange (POST)
 async function handleTokenExchange(context, req) {
+  context.log('Token exchange request body:', JSON.stringify(req.body));
+  
   const { code, refresh_token, grant_type = 'authorization_code' } = req.body;
 
   if (!code && !refresh_token) {
+    context.log.error('Missing both code and refresh_token');
     context.res.status = 400;
     context.res.body = { error: 'Authorization code or refresh token is required' };
     return;
   }
+
+  context.log(`Grant type: ${grant_type}, has code: ${!!code}, has refresh_token: ${!!refresh_token}`);
 
   try {
     const clientId = process.env.CONCEPT2_CLIENT_ID;
