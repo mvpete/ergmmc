@@ -34,11 +34,11 @@
       <table>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Distance</th>
-            <th>Time</th>
-            <th>Avg Pace</th>
-            <th>Avg HR</th>
+            <th><span class="full">Date</span><span class="abbr">Date</span></th>
+            <th><span class="full">Distance</span><span class="abbr">Dist</span></th>
+            <th><span class="full">Time</span><span class="abbr">Time</span></th>
+            <th><span class="full">Avg Pace</span><span class="abbr">Pace</span></th>
+            <th><span class="full">Avg HR</span><span class="abbr">HR</span></th>
           </tr>
         </thead>
         <tbody>
@@ -178,6 +178,8 @@ function formatHeartRate(workout) {
 @media (max-width: 640px) {
   .list-view {
     padding: 0.5rem;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 }
 
@@ -289,9 +291,10 @@ function formatHeartRate(workout) {
 
 @media (max-width: 640px) {
   .list-container {
-    margin: 0 -0.5rem;
-    padding: 0 0.5rem;
+    margin: 0;
+    padding: 0;
     max-height: 350px;
+    overflow-x: hidden;
   }
 }
 
@@ -322,11 +325,23 @@ th {
   background: #111827;
 }
 
+th .abbr {
+  display: none;
+}
+
 @media (max-width: 640px) {
   th {
-    padding: 0.5rem 0.25rem;
-    font-size: 0.5625rem;
-    letter-spacing: 0.02em;
+    padding: 0.5rem 0.125rem;
+    font-size: 0.5rem;
+    letter-spacing: 0;
+  }
+  
+  th .full {
+    display: none;
+  }
+  
+  th .abbr {
+    display: inline;
   }
 }
 
@@ -334,12 +349,15 @@ td {
   padding: 0.75rem;
   font-size: 0.875rem;
   border-bottom: 1px solid #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width: 640px) {
   td {
-    padding: 0.5rem 0.25rem;
-    font-size: 0.75rem;
+    padding: 0.5rem 0.125rem;
+    font-size: 0.6875rem;
   }
 }
 

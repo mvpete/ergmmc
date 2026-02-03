@@ -229,6 +229,8 @@ const longestStreak = computed(() => {
 @media (max-width: 640px) {
   .calendar-view {
     padding: 0.5rem;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 }
 
@@ -361,8 +363,8 @@ const longestStreak = computed(() => {
   }
   
   .legend-squares .square {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
 }
 
@@ -430,8 +432,9 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .calendar-container {
-    margin: 0 -0.5rem;
-    padding: 0 0.5rem;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
   }
 }
 
@@ -445,8 +448,8 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .months {
-    font-size: 0.5rem;
-    margin-left: 20px;
+    font-size: 0.45rem;
+    margin-left: 15px;
     margin-bottom: 0.25rem;
   }
 }
@@ -458,13 +461,20 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .months span {
-    min-width: 25px;
-    font-size: 0.5rem;
+    min-width: unset;
+    flex: 1;
   }
 }
 
 .calendar-grid {
   display: flex;
+}
+
+@media (max-width: 640px) {
+  .calendar-grid {
+    width: 100%;
+    max-width: 100vw;
+  }
 }
 
 .weekdays {
@@ -474,11 +484,12 @@ const longestStreak = computed(() => {
   margin-right: 4px;
   font-size: 0.625rem;
   color: #9ca3af;
+  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {
   .weekdays {
-    font-size: 0.4rem;
+    font-size: 0.375rem;
     gap: 1px;
     margin-right: 2px;
   }
@@ -491,19 +502,21 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .weekdays span {
-    height: 6px;
-    line-height: 6px;
+    height: 5px;
+    line-height: 5px;
   }
 }
 
 .squares-container {
   display: flex;
   gap: 2px;
+  flex: 1;
+  overflow: hidden;
 }
 
 @media (max-width: 640px) {
   .squares-container {
-    gap: 1px;
+    gap: 0.5px;
   }
 }
 
@@ -511,11 +524,12 @@ const longestStreak = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
 }
 
 @media (max-width: 640px) {
   .week {
-    gap: 1px;
+    gap: 0.5px;
   }
 }
 
@@ -528,8 +542,8 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .square {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 1px;
   }
 }
