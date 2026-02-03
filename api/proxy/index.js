@@ -11,7 +11,7 @@ module.exports = async function (context, req) {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      'Access-Control-Allow-Headers': 'Content-Type, X-Concept2-Token'
     }
   };
 
@@ -28,15 +28,17 @@ module.exports = async function (context, req) {
   }
 
   // Azure Functions may lowercase header names
-  const authorization = req.headers.authorization || req.headers.Authorization;
-  if (!authorization) {
-    context.log.error('No authorization header found. Headers:', JSON.stringify(req.headers));
+  // Note: Azure Static Web Apps overwrites the Authorization header with its own auth token
+  // So we use a custom header X-Concept2-Token instead
+  const token = req.headers['x-concept2-token'] || req.headers['X-Concept2-Token'];
+  if (!token) {
+    context.log.error('No X-Concept2-Token header found. Headers:', JSON.stringify(req.headers));
     context.res.status = 401;
-    context.res.body = { error: 'Authorization header required' };
+    context.res.body = { error: 'X-Concept2-Token header required' };
     return;
   }
 
-  context.log('Authorization header present:', authorization.substring(0, 20) + '...');
+  context.log('Concept2 token header present:', token.substring(0, 20) + '...');
 
   const path = req.query.path;
   context.log('Requested path:', path);
@@ -68,12 +70,12 @@ module.exports = async function (context, req) {
   try {
     const apiUrl = `https://log.concept2.com/api${path}`;
     context.log('Proxying request to:', apiUrl);
-    context.log('Authorization header (first 30 chars):', authorization.substring(0, 30) + '...');
+    context.log('Concept2 token (first 30 chars):', token.substring(0, 30) + '...');
 
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Authorization': authorization,  // Pass through as-is, already has "Bearer "
+        'Authorization': `Bearer ${token}`,  // Send to Concept2 API with Bearer prefix
         'Accept': 'application/json'
       }
     });

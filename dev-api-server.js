@@ -61,9 +61,10 @@ app.post('/api/token', async (req, res) => {
 
 // API proxy endpoint to avoid CORS issues on iOS
 app.get('/api/proxy', async (req, res) => {
-  const authorization = req.headers.authorization
-  if (!authorization) {
-    return res.status(401).json({ error: 'Authorization header required' })
+  // Use X-Concept2-Token header (Azure Static Web Apps overwrites Authorization header)
+  const token = req.headers['x-concept2-token']
+  if (!token) {
+    return res.status(401).json({ error: 'X-Concept2-Token header required' })
   }
 
   const path = req.query.path
@@ -91,7 +92,7 @@ app.get('/api/proxy', async (req, res) => {
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Authorization': authorization,
+        'Authorization': `Bearer ${token}`,
         'Accept': 'application/json'
       }
     })

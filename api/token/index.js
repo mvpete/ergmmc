@@ -27,7 +27,10 @@ module.exports = async function (context, req) {
 
   const { code, refresh_token, grant_type = 'authorization_code' } = req.body;
 
+  context.log('Token request - grant_type:', grant_type, 'has code:', !!code, 'has refresh_token:', !!refresh_token);
+
   if (!code && !refresh_token) {
+    context.log.error('Token request missing both code and refresh_token');
     context.res.status = 400;
     context.res.body = { error: 'Authorization code or refresh token is required' };
     return;

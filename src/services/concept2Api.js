@@ -121,12 +121,14 @@ async function apiRequest(endpoint) {
   let response
   try {
     // Use the proxy endpoint to avoid CORS issues
+    // Note: Use X-Concept2-Token instead of Authorization because Azure Static Web Apps
+    // overwrites the Authorization header with its own auth token
     const proxyUrl = `/api/proxy?path=${encodeURIComponent(endpoint)}`
     console.log('Making request to proxy with token:', token.substring(0, 20) + '...')
     response = await fetch(proxyUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'X-Concept2-Token': token,
         'Accept': 'application/json'
       }
     })
