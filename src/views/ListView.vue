@@ -303,8 +303,8 @@ table {
 
 @media (max-width: 640px) {
   table {
-    min-width: 450px;
-    font-size: 0.8125rem;
+    min-width: 100%;
+    font-size: 0.75rem;
   }
 }
 
@@ -324,8 +324,9 @@ th {
 
 @media (max-width: 640px) {
   th {
-    padding: 0.5rem 0.375rem;
-    font-size: 0.625rem;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.5625rem;
+    letter-spacing: 0.02em;
   }
 }
 
@@ -337,8 +338,8 @@ td {
 
 @media (max-width: 640px) {
   td {
-    padding: 0.5rem 0.375rem;
-    font-size: 0.8125rem;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
   }
 }
 

@@ -361,8 +361,8 @@ const longestStreak = computed(() => {
   }
   
   .legend-squares .square {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 }
 
@@ -458,7 +458,7 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .months span {
-    min-width: 35px;
+    min-width: 25px;
     font-size: 0.5rem;
   }
 }
@@ -491,8 +491,8 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .weekdays span {
-    height: 8px;
-    line-height: 8px;
+    height: 6px;
+    line-height: 6px;
   }
 }
 
@@ -528,8 +528,8 @@ const longestStreak = computed(() => {
 
 @media (max-width: 640px) {
   .square {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 1px;
   }
 }
