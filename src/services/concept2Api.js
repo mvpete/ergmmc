@@ -163,7 +163,7 @@ async function apiRequest(endpoint) {
       throw new Error('Session expired. Please reconnect.')
     }
     console.error('API request failed:', response.status, errorBody)
-    throw new Error(`API request failed (${response.status}): ${errorBody || 'Unknown error'}`)
+    throw new Error(`Status ${response.status}: ${errorBody.substring(0, 200)}`)
   }
 
   return response.json()
