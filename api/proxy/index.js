@@ -25,8 +25,10 @@ module.exports = async function (context, req) {
     return;
   }
 
-  const authorization = req.headers.authorization;
+  // Azure Functions may lowercase header names
+  const authorization = req.headers.authorization || req.headers.Authorization;
   if (!authorization) {
+    context.log.error('No authorization header found');
     context.res.status = 401;
     context.res.body = { error: 'Authorization header required' };
     return;
@@ -36,6 +38,23 @@ module.exports = async function (context, req) {
   if (!path) {
     context.res.status = 400;
     context.res.body = { error: 'Path parameter required' };
+    return;
+  }
+
+  // Security: Validate path to prevent malicious requests
+  // Only allow paths starting with /users/me
+  if (!path.startsWith('/users/me')) {
+    context.log.warn('Blocked potentially malicious API call:', path);
+    context.res.status = 403;
+    context.res.body = { error: 'Forbidden: Invalid API path' };
+    return;
+  }
+
+  // Security: Prevent path traversal attacks
+  if (path.includes('..') || path.includes('//')) {
+    context.log.warn('Blocked path traversal attempt:', path);
+    context.res.status = 403;
+    context.res.body = { error: 'Forbidden: Invalid path format' };
     return;
   }
 
@@ -51,11 +70,22 @@ module.exports = async function (context, req) {
       }
     });
 
+    context.log('Concept2 API response status:', response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
       context.log.error('Concept2 API error:', response.status, errorText);
+      
+      // Try to parse error as JSON, otherwise return as text
+      let errorBody;
+      try {
+        errorBody = JSON.parse(errorText);
+      } catch {
+        errorBody = { error: errorText };
+      }
+      
       context.res.status = response.status;
-      context.res.body = { error: errorText };
+      context.res.body = errorBody;
       return;
     }
 

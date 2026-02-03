@@ -1,15 +1,15 @@
 const fetch = require('node-fetch');
 
 module.exports = async function (context, req) {
-  context.log(`Token/Proxy endpoint called: ${req.method} ${req.url}`);
+  context.log('Token exchange endpoint called');
 
   // Enable CORS
   context.res = {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
     }
   };
 
@@ -19,115 +19,19 @@ module.exports = async function (context, req) {
     return;
   }
 
-  // GET requests are for API proxying
-  if (req.method === 'GET') {
-    return handleApiProxy(context, req);
-  }
-
-  // POST requests are for token exchange
-  if (req.method === 'POST') {
-    return handleTokenExchange(context, req);
-  }
-
-  context.res.status = 405;
-  context.res.body = { error: 'Method not allowed' };
-};
-
-// Handle API proxy requests (GET)
-async function handleApiProxy(context, req) {
-  context.log('Headers received:', JSON.stringify(req.headers));
-  
-  // Azure Functions may lowercase header names
-  const authorization = req.headers.authorization || req.headers.Authorization;
-  if (!authorization) {
-    context.log.error('No authorization header found');
-    context.res.status = 401;
-    context.res.body = { error: 'Authorization header required' };
+  if (req.method !== 'POST') {
+    context.res.status = 405;
+    context.res.body = { error: 'Method not allowed' };
     return;
   }
 
-  context.log('Authorization header:', authorization.substring(0, 20) + '...');
-
-  const path = req.query.path;
-  if (!path) {
-    context.res.status = 400;
-    context.res.body = { error: 'Path parameter required' };
-    return;
-  }
-
-  // Security: Validate path to prevent malicious requests
-  // Only allow paths starting with /users/me
-  if (!path.startsWith('/users/me')) {
-    context.log.warn('Blocked potentially malicious API call:', path);
-    context.res.status = 403;
-    context.res.body = { error: 'Forbidden: Invalid API path' };
-    return;
-  }
-
-  // Security: Prevent path traversal attacks
-  if (path.includes('..') || path.includes('//')) {
-    context.log.warn('Blocked path traversal attempt:', path);
-    context.res.status = 403;
-    context.res.body = { error: 'Forbidden: Invalid path format' };
-    return;
-  }
-
-  try {
-    const apiUrl = `https://log.concept2.com/api${path}`;
-    context.log('Proxying request to:', apiUrl);
-    context.log('Forwarding Authorization:', authorization);
-
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': authorization,
-        'Accept': 'application/json'
-      }
-    });
-    
-    context.log('Concept2 API response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      context.log.error('Concept2 API error:', response.status, errorText);
-      
-      // Try to parse error as JSON, otherwise return as text
-      let errorBody;
-      try {
-        errorBody = JSON.parse(errorText);
-      } catch {
-        errorBody = { error: errorText };
-      }
-      
-      context.res.status = response.status;
-      context.res.body = errorBody;
-      return;
-    }
-
-    const data = await response.json();
-    context.res.status = 200;
-    context.res.body = data;
-  } catch (error) {
-    context.log.error('Error proxying request:', error);
-    context.res.status = 500;
-    context.res.body = { error: error.message };
-  }
-}
-
-// Handle token exchange (POST)
-async function handleTokenExchange(context, req) {
-  context.log('Token exchange request body:', JSON.stringify(req.body));
-  
   const { code, refresh_token, grant_type = 'authorization_code' } = req.body;
 
   if (!code && !refresh_token) {
-    context.log.error('Missing both code and refresh_token');
     context.res.status = 400;
     context.res.body = { error: 'Authorization code or refresh token is required' };
     return;
   }
-
-  context.log(`Grant type: ${grant_type}, has code: ${!!code}, has refresh_token: ${!!refresh_token}`);
 
   try {
     const clientId = process.env.CONCEPT2_CLIENT_ID;
@@ -193,4 +97,4 @@ async function handleTokenExchange(context, req) {
     context.res.status = 500;
     context.res.body = { error: 'Internal server error' };
   }
-}
+};

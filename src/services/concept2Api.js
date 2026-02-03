@@ -120,7 +120,7 @@ async function apiRequest(endpoint) {
   let response
   try {
     // Use the proxy endpoint to avoid CORS issues
-    const proxyUrl = `/api/token?path=${encodeURIComponent(endpoint)}`
+    const proxyUrl = `/api/proxy?path=${encodeURIComponent(endpoint)}`
     response = await fetch(proxyUrl, {
       method: 'GET',
       headers: {
@@ -139,15 +139,18 @@ async function apiRequest(endpoint) {
     const errorBody = await response.text()
     console.log('Response body:', errorBody)
     if (response.status === 401) {
+      console.log('Got 401, attempting token refresh...')
       // Try to refresh and retry once
       const tokenData = getToken()
       if (tokenData?.refresh_token) {
+        console.log('Have refresh token, attempting refresh')
         try {
           const newTokenData = await refreshAccessToken(tokenData.refresh_token)
           saveToken(newTokenData)
+          console.log('Token refreshed successfully, retrying request')
 
           // Retry the request
-          const proxyUrl = `/api/token?path=${encodeURIComponent(endpoint)}`
+          const proxyUrl = `/api/proxy?path=${encodeURIComponent(endpoint)}`
           const retryResponse = await fetch(proxyUrl, {
             method: 'GET',
             headers: {
@@ -157,11 +160,16 @@ async function apiRequest(endpoint) {
           })
 
           if (retryResponse.ok) {
+            console.log('Retry succeeded!')
             return retryResponse.json()
           }
+          console.log('Retry also failed with status:', retryResponse.status)
         } catch (err) {
+          console.error('Token refresh failed:', err)
           // Refresh failed
         }
+      } else {
+        console.log('No refresh token available')
       }
 
       clearToken()

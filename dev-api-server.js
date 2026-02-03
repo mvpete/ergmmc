@@ -60,7 +60,7 @@ app.post('/api/token', async (req, res) => {
 })
 
 // API proxy endpoint to avoid CORS issues on iOS
-app.get('/api/token', async (req, res) => {
+app.get('/api/proxy', async (req, res) => {
   const authorization = req.headers.authorization
   if (!authorization) {
     return res.status(401).json({ error: 'Authorization header required' })
