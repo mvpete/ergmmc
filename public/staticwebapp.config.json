@@ -5,13 +5,19 @@
       "allowedRoles": ["anonymous"]
     },
     {
+      "route": "/callback",
+      "serve": "/index.html",
+      "statusCode": 200
+    },
+    {
       "route": "/*",
       "serve": "/index.html",
       "statusCode": 200
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": ["/api/*"]
   },
   "mimeTypes": {
     ".json": "application/json",
