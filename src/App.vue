@@ -3,7 +3,13 @@
     <template v-if="!authenticated">
       <div class="container">
         <h1 style="margin-bottom: 2rem; font-size: 1.5rem;">Million Meter Club</h1>
-        <button class="connect-btn" @click="connect">
+        <div v-if="loading" style="margin-bottom: 1rem; color: #9ca3af;">
+          Authenticating...
+        </div>
+        <div v-if="error" class="error" style="margin-bottom: 1rem;">
+          {{ error }}
+        </div>
+        <button class="connect-btn" @click="connect" :disabled="loading">
           Connect to Concept2
         </button>
       </div>
@@ -201,13 +207,17 @@ async function handleCallback() {
   if (code) {
     try {
       loading.value = true
+      error.value = null
+      console.log('Exchanging code for token...')
       const tokenData = await exchangeCodeForToken(code)
+      console.log('Token received:', tokenData)
       saveToken(tokenData)
       window.history.replaceState({}, '', '/')
       authenticated.value = true
       await loadData()
     } catch (err) {
-      error.value = 'Failed to authenticate. Please try again.'
+      console.error('Authentication failed:', err)
+      error.value = `Failed to authenticate: ${err.message}`
       loading.value = false
     }
   }
