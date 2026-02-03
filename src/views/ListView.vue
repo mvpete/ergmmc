@@ -175,6 +175,12 @@ function formatHeartRate(workout) {
   padding: 1rem;
 }
 
+@media (max-width: 640px) {
+  .list-view {
+    padding: 0.5rem;
+  }
+}
+
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -241,12 +247,27 @@ function formatHeartRate(workout) {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .list-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 }
 
 .list-title h2 {
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .list-title h2 {
+    font-size: 1.25rem;
+  }
 }
 
 .list-subtitle {
@@ -263,11 +284,28 @@ function formatHeartRate(workout) {
   overflow-x: auto;
   max-height: 400px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  .list-container {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+    max-height: 350px;
+  }
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 500px;
+}
+
+@media (max-width: 640px) {
+  table {
+    min-width: 450px;
+    font-size: 0.8125rem;
+  }
 }
 
 th {
@@ -284,10 +322,24 @@ th {
   background: #111827;
 }
 
+@media (max-width: 640px) {
+  th {
+    padding: 0.5rem 0.375rem;
+    font-size: 0.625rem;
+  }
+}
+
 td {
   padding: 0.75rem;
   font-size: 0.875rem;
   border-bottom: 1px solid #1f2937;
+}
+
+@media (max-width: 640px) {
+  td {
+    padding: 0.5rem 0.375rem;
+    font-size: 0.8125rem;
+  }
 }
 
 tr:hover td {
@@ -319,9 +371,25 @@ tr:hover td {
   flex-wrap: wrap;
 }
 
+@media (max-width: 640px) {
+  .totals {
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+}
+
 .total-item {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 100px;
+}
+
+@media (max-width: 640px) {
+  .total-item {
+    min-width: 80px;
+  }
 }
 
 .total-label {
@@ -331,9 +399,21 @@ tr:hover td {
   letter-spacing: 0.05em;
 }
 
+@media (max-width: 640px) {
+  .total-label {
+    font-size: 0.625rem;
+  }
+}
+
 .total-value {
   font-size: 1.25rem;
   font-weight: 700;
   margin-top: 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .total-value {
+    font-size: 1.125rem;
+  }
 }
 </style>

@@ -83,6 +83,7 @@ function save() {
   align-items: center;
   justify-content: center;
   z-index: 100;
+  padding: 1rem;
 }
 
 .modal {
@@ -93,12 +94,24 @@ function save() {
   margin: 1rem;
 }
 
+@media (max-width: 640px) {
+  .modal {
+    margin: 0;
+  }
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #374151;
+}
+
+@media (max-width: 640px) {
+  .modal-header {
+    padding: 0.875rem 1rem;
+  }
 }
 
 .modal-header h2 {
@@ -124,8 +137,20 @@ function save() {
   padding: 1.5rem;
 }
 
+@media (max-width: 640px) {
+  .modal-body {
+    padding: 1rem;
+  }
+}
+
 .form-group {
   margin-bottom: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .form-group {
+    margin-bottom: 1rem;
+  }
 }
 
 .form-group:last-child {
@@ -148,6 +173,15 @@ function save() {
   border-radius: 0.375rem;
   color: #f9fafb;
   font-size: 1rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+@media (max-width: 640px) {
+  .form-group input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem;
+  }
 }
 
 .form-group input:focus {
@@ -163,6 +197,13 @@ function save() {
   border-top: 1px solid #374151;
 }
 
+@media (max-width: 640px) {
+  .modal-footer {
+    padding: 0.875rem 1rem;
+    gap: 0.5rem;
+  }
+}
+
 .btn {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
@@ -170,6 +211,13 @@ function save() {
   border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 44px; /* Touch-friendly minimum */
+}
+
+@media (max-width: 640px) {
+  .btn {
+    padding: 0.625rem 1.25rem;
+  }
 }
 
 .btn-secondary {

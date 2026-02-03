@@ -269,6 +269,15 @@ onMounted(async () => {
   color: #f9fafb;
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+@media (max-width: 640px) {
+  .app-title {
+    font-size: 1.125rem;
+    margin-top: 1rem;
+  }
 }
 
 .tabs {
@@ -280,6 +289,14 @@ onMounted(async () => {
   padding: 0.25rem;
 }
 
+@media (max-width: 640px) {
+  .tabs {
+    width: calc(100% - 2rem);
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+}
+
 .tab {
   padding: 0.5rem 1.5rem;
   font-size: 0.875rem;
@@ -288,6 +305,15 @@ onMounted(async () => {
   text-decoration: none;
   border-radius: 0.375rem;
   transition: all 0.2s;
+  flex: 1;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .tab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
 }
 
 .tab:hover {
@@ -308,10 +334,25 @@ onMounted(async () => {
   padding: 2rem;
 }
 
+@media (max-width: 640px) {
+  .main-content {
+    padding: 1rem 0.5rem;
+  }
+}
+
 .footer-buttons {
   display: flex;
   gap: 0.75rem;
   margin: 1rem 0 2rem;
+  padding: 0 1rem;
+}
+
+@media (max-width: 640px) {
+  .footer-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
 }
 
 .footer-btn {

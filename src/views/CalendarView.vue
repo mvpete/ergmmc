@@ -226,6 +226,12 @@ const longestStreak = computed(() => {
   padding: 1rem;
 }
 
+@media (max-width: 640px) {
+  .calendar-view {
+    padding: 0.5rem;
+  }
+}
+
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -278,16 +284,34 @@ const longestStreak = computed(() => {
   margin-bottom: 1.5rem;
 }
 
+@media (max-width: 640px) {
+  .calendar-intro {
+    margin-bottom: 1rem;
+  }
+}
+
 .calendar-intro h2 {
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
+@media (max-width: 640px) {
+  .calendar-intro h2 {
+    font-size: 1.25rem;
+  }
+}
+
 .intro-text {
   color: #9ca3af;
   font-size: 0.875rem;
   line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .intro-text {
+    font-size: 0.8125rem;
+  }
 }
 
 .calendar-footer {
@@ -323,16 +347,39 @@ const longestStreak = computed(() => {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #374151;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .calendar-stats {
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+  }
 }
 
 .stat {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 80px;
+}
+
+@media (max-width: 640px) {
+  .stat {
+    min-width: 70px;
+  }
 }
 
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .stat-value {
+    font-size: 1.25rem;
+  }
 }
 
 .stat-label {
@@ -353,6 +400,14 @@ const longestStreak = computed(() => {
 
 .calendar-container {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  .calendar-container {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+  }
 }
 
 .months {
@@ -363,9 +418,22 @@ const longestStreak = computed(() => {
   margin-bottom: 0.5rem;
 }
 
+@media (max-width: 640px) {
+  .months {
+    font-size: 0.625rem;
+    margin-left: 24px;
+  }
+}
+
 .months span {
   width: calc(100% / 12);
   min-width: 60px;
+}
+
+@media (max-width: 640px) {
+  .months span {
+    min-width: 45px;
+  }
 }
 
 .calendar-grid {
@@ -381,14 +449,34 @@ const longestStreak = computed(() => {
   color: #9ca3af;
 }
 
+@media (max-width: 640px) {
+  .weekdays {
+    font-size: 0.5rem;
+    gap: 1px;
+  }
+}
+
 .weekdays span {
   height: 12px;
   line-height: 12px;
 }
 
+@media (max-width: 640px) {
+  .weekdays span {
+    height: 10px;
+    line-height: 10px;
+  }
+}
+
 .squares-container {
   display: flex;
   gap: 2px;
+}
+
+@media (max-width: 640px) {
+  .squares-container {
+    gap: 1px;
+  }
 }
 
 .week {
@@ -397,11 +485,25 @@ const longestStreak = computed(() => {
   gap: 2px;
 }
 
+@media (max-width: 640px) {
+  .week {
+    gap: 1px;
+  }
+}
+
 .square {
   width: 12px;
   height: 12px;
   border-radius: 2px;
   background: #1f2937;
+}
+
+@media (max-width: 640px) {
+  .square {
+    width: 10px;
+    height: 10px;
+    border-radius: 1.5px;
+  }
 }
 
 .square.empty {

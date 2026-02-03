@@ -72,8 +72,8 @@
         </h2>
         <CircularProgress
           :percentage="percentage"
-          :size="280"
-          :stroke-width="20"
+          :size="circleSize"
+          :stroke-width="circleStrokeWidth"
           :color="onTrack ? '#4ade80' : '#f87171'"
         >
           <div class="meters">{{ formattedMeters }}</div>
@@ -125,7 +125,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import CircularProgress from '../components/CircularProgress.vue'
 
 const props = defineProps({
@@ -143,6 +143,31 @@ const props = defineProps({
 })
 
 defineEmits(['retry'])
+
+// Responsive circle size
+const windowWidth = ref(window.innerWidth)
+
+const circleSize = computed(() => {
+  if (windowWidth.value < 640) return 220
+  return 280
+})
+
+const circleStrokeWidth = computed(() => {
+  if (windowWidth.value < 640) return 16
+  return 20
+})
+
+const updateWindowWidth = () => {
+  windowWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  window.addEventListener('resize', updateWindowWidth)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateWindowWidth)
+})
 
 const BADGE_MILESTONES = [1, 2, 3, 4, 5, 10, 15, 20]
 
@@ -230,6 +255,16 @@ const formattedYear = computed(() => props.metersYear.toLocaleString())
   align-items: center;
   gap: 2rem;
   padding: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  .progress-view {
+    padding: 0.5rem;
+    gap: 1.5rem;
+    width: 100%;
+  }
 }
 
 .loading-state {
@@ -288,12 +323,27 @@ const formattedYear = computed(() => props.metersYear.toLocaleString())
   color: #f9fafb;
 }
 
+@media (max-width: 640px) {
+  .lifetime-value {
+    font-size: 1.875rem;
+  }
+}
+
 .stats-table {
   margin-top: 2rem;
   background: #1f2937;
   border-radius: 12px;
   padding: 1rem;
   min-width: 280px;
+  width: 100%;
+  max-width: 400px;
+}
+
+@media (max-width: 640px) {
+  .stats-table {
+    min-width: unset;
+    margin-top: 1.5rem;
+  }
 }
 
 .stat-row {
