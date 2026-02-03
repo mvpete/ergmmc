@@ -63,11 +63,12 @@ module.exports = async function (context, req) {
   try {
     const apiUrl = `https://log.concept2.com/api${path}`;
     context.log('Proxying request to:', apiUrl);
+    context.log('Authorization header received:', authorization);
 
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Authorization': authorization,
+        'Authorization': authorization,  // Pass through as-is, already has "Bearer "
         'Accept': 'application/json'
       }
     });
