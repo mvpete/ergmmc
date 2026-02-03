@@ -109,14 +109,26 @@ export function isAuthenticated() {
 }
 
 async function apiRequest(endpoint) {
-  const token = await getValidToken()
+  let token
+  try {
+    token = await getValidToken()
+  } catch (err) {
+    console.error('Failed to get valid token:', err)
+    throw err
+  }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    }
-  })
+  let response
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    })
+  } catch (err) {
+    console.error('Network error calling Concept2 API:', err)
+    throw new Error(`Network error: ${err.message}`)
+  }
 
   if (!response.ok) {
     if (response.status === 401) {
@@ -182,22 +194,31 @@ export async function fetchYearResults(year) {
 }
 
 export async function fetchAllResults() {
+  console.log('fetchAllResults: Starting to fetch all workout results')
   let allResults = []
   let page = 1
   let hasMore = true
 
   while (hasMore) {
-    const data = await apiRequest(`/users/me/results?page=${page}`)
+    console.log(`fetchAllResults: Fetching page ${page}`)
+    try {
+      const data = await apiRequest(`/users/me/results?page=${page}`)
+      console.log(`fetchAllResults: Page ${page} returned ${data.data?.length || 0} results`)
 
-    if (data.data && data.data.length > 0) {
-      allResults = allResults.concat(data.data)
-      page++
-      hasMore = data.data.length === 50
-    } else {
-      hasMore = false
+      if (data.data && data.data.length > 0) {
+        allResults = allResults.concat(data.data)
+        page++
+        hasMore = data.data.length === 50
+      } else {
+        hasMore = false
+      }
+    } catch (err) {
+      console.error(`fetchAllResults: Error on page ${page}:`, err)
+      throw err
     }
   }
 
+  console.log(`fetchAllResults: Total results fetched: ${allResults.length}`)
   return allResults
 }
 
