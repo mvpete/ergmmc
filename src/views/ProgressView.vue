@@ -89,6 +89,10 @@
           {{ behindMessage }}
         </div>
         
+        <div v-if="onTrack && aheadMessage" class="ahead-message">
+          {{ aheadMessage }}
+        </div>
+        
         <div class="stats-table">
           <div class="stat-row">
             <span class="stat-label">Today</span>
@@ -289,6 +293,45 @@ const behindMessage = computed(() => {
   return `You're behind by ${metersBehind.toLocaleString()} meters. Row for ${timeString} at your average pace to catch up.`
 })
 
+// Calculate ahead message
+const aheadMessage = computed(() => {
+  if (!onTrack.value) return null
+  if (!props.startDate || !props.endDate) return null
+  
+  const now = new Date()
+  const start = parseLocalDate(props.startDate)
+  const end = parseLocalDate(props.endDate)
+  
+  if (now <= start) return null
+  
+  const daysPassed = Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1
+  
+  if (daysPassed === 0) return null
+  
+  const metersPerDay = props.totalMeters / daysPassed
+  
+  if (metersPerDay === 0) return null
+  
+  const metersRemaining = props.goal - props.totalMeters
+  const daysNeeded = Math.ceil(metersRemaining / metersPerDay)
+  
+  const projectedDate = new Date(now)
+  projectedDate.setDate(projectedDate.getDate() + daysNeeded)
+  
+  // Format the projected date
+  const opts = { month: 'long', day: 'numeric', year: 'numeric' }
+  const dateString = projectedDate.toLocaleDateString('en-US', opts)
+  
+  // Calculate how many days ahead
+  const daysAhead = Math.floor((end - projectedDate) / (1000 * 60 * 60 * 24))
+  
+  if (daysAhead > 0) {
+    return `You're ahead of pace! At this rate, you'll be done by ${dateString} (${daysAhead} days early).`
+  } else {
+    return `You're ahead of pace! At this rate, you'll be done by ${dateString}.`
+  }
+})
+
 const formattedMeters = computed(() => props.totalMeters.toLocaleString())
 const formattedGoal = computed(() => props.goal.toLocaleString())
 const formattedExpected = computed(() => expectedMeters.value.toLocaleString())
@@ -395,6 +438,27 @@ const formattedYear = computed(() => props.metersYear.toLocaleString())
 
 @media (max-width: 640px) {
   .behind-message {
+    font-size: 0.8125rem;
+    padding: 0.875rem;
+    margin-top: 1rem;
+  }
+}
+
+.ahead-message {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 0.5rem;
+  color: #86efac;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: center;
+  max-width: 400px;
+}
+
+@media (max-width: 640px) {
+  .ahead-message {
     font-size: 0.8125rem;
     padding: 0.875rem;
     margin-top: 1rem;
