@@ -577,6 +577,9 @@ const formattedYear = computed(() => props.metersYear.toLocaleString())
 
 .year-section {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .year-title {
