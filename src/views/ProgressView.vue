@@ -85,6 +85,10 @@
           <div class="expected">Expected: {{ formattedExpected }}</div>
         </CircularProgress>
         
+        <div v-if="!onTrack && behindMessage" class="behind-message">
+          {{ behindMessage }}
+        </div>
+        
         <div class="stats-table">
           <div class="stat-row">
             <span class="stat-label">Today</span>
@@ -139,7 +143,8 @@ const props = defineProps({
   metersToday: { type: Number, default: 0 },
   metersWeek: { type: Number, default: 0 },
   metersMonth: { type: Number, default: 0 },
-  metersYear: { type: Number, default: 0 }
+  metersYear: { type: Number, default: 0 },
+  workouts: { type: Array, default: () => [] }
 })
 
 defineEmits(['retry'])
@@ -238,6 +243,52 @@ const expectedMeters = computed(() => {
 })
 
 const onTrack = computed(() => props.totalMeters >= expectedMeters.value)
+
+// Calculate average pace from workouts
+const averagePaceSeconds = computed(() => {
+  if (!props.workouts || props.workouts.length === 0) return null
+  
+  let totalTime = 0
+  let totalDistance = 0
+  
+  props.workouts.forEach(workout => {
+    if (workout.time && workout.distance) {
+      totalTime += workout.time / 10 // Convert from tenths to seconds
+      totalDistance += workout.distance
+    }
+  })
+  
+  if (totalDistance === 0) return null
+  
+  // Return pace in seconds per 500m
+  return (totalTime / totalDistance) * 500
+})
+
+// Calculate behind message
+const behindMessage = computed(() => {
+  if (onTrack.value) return null
+  
+  const metersBehind = expectedMeters.value - props.totalMeters
+  
+  if (!averagePaceSeconds.value) {
+    return `You're behind by ${metersBehind.toLocaleString()} meters.`
+  }
+  
+  // Calculate time needed at average pace
+  const timeNeededSeconds = (metersBehind / 500) * averagePaceSeconds.value
+  const hours = Math.floor(timeNeededSeconds / 3600)
+  const minutes = Math.floor((timeNeededSeconds % 3600) / 60)
+  
+  let timeString = ''
+  if (hours > 0) {
+    timeString = `${hours}h ${minutes}m`
+  } else {
+    timeString = `${minutes} min`
+  }
+  
+  return `You're behind by ${metersBehind.toLocaleString()} meters. Row for ${timeString} at your average pace to catch up.`
+})
+
 const formattedMeters = computed(() => props.totalMeters.toLocaleString())
 const formattedGoal = computed(() => props.goal.toLocaleString())
 const formattedExpected = computed(() => expectedMeters.value.toLocaleString())
@@ -326,6 +377,27 @@ const formattedYear = computed(() => props.metersYear.toLocaleString())
 @media (max-width: 640px) {
   .lifetime-value {
     font-size: 1.875rem;
+  }
+}
+
+.behind-message {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 0.5rem;
+  color: #fca5a5;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: center;
+  max-width: 400px;
+}
+
+@media (max-width: 640px) {
+  .behind-message {
+    font-size: 0.8125rem;
+    padding: 0.875rem;
+    margin-top: 1rem;
   }
 }
 
