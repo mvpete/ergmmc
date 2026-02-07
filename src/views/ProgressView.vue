@@ -114,6 +114,10 @@
             <span class="stat-label">This Year</span>
             <span class="stat-value">{{ formattedYear }}</span>
           </div>
+          <div v-if="projectedMillionText" class="stat-row highlight">
+            <span class="stat-label">{{ projectedMillionText }}</span>
+            <span class="stat-value">{{ projectedMillionDate }}</span>
+          </div>
         </div>
       </div>
 
@@ -381,6 +385,43 @@ const formattedToday = computed(() => props.metersToday.toLocaleString())
 const formattedWeek = computed(() => props.metersWeek.toLocaleString())
 const formattedMonth = computed(() => props.metersMonth.toLocaleString())
 const formattedYear = computed(() => props.metersYear.toLocaleString())
+
+// Projected million meter milestone for stats table
+const projectedMillionText = computed(() => {
+  if (!props.lifetimeMeters) return null
+  
+  const currentMillions = Math.floor(props.lifetimeMeters / 1_000_000)
+  const nextMilestone = (currentMillions + 1) * 1_000_000
+  const metersToNextMillion = nextMilestone - props.lifetimeMeters
+  
+  if (metersToNextMillion <= 0 || metersToNextMillion >= 1_000_000) return null
+  
+  const milestoneFormatted = (currentMillions + 1).toLocaleString()
+  return `Projected ${milestoneFormatted}M meters`
+})
+
+const projectedMillionDate = computed(() => {
+  if (!projectedMillionText.value || !props.startDate) return null
+  
+  const now = new Date()
+  const start = parseLocalDate(props.startDate)
+  
+  const currentMillions = Math.floor(props.lifetimeMeters / 1_000_000)
+  const nextMilestone = (currentMillions + 1) * 1_000_000
+  const metersToNextMillion = nextMilestone - props.lifetimeMeters
+  
+  const daysPassed = Math.max(1, Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1)
+  const metersPerDay = props.lifetimeMeters / daysPassed
+  
+  if (metersPerDay === 0) return null
+  
+  const daysNeeded = Math.ceil(metersToNextMillion / metersPerDay)
+  const projectedDate = new Date(now)
+  projectedDate.setDate(projectedDate.getDate() + daysNeeded)
+  
+  const opts = { month: 'short', day: 'numeric', year: 'numeric' }
+  return projectedDate.toLocaleDateString('en-US', opts)
+})
 </script>
 
 <style scoped>
@@ -554,6 +595,22 @@ const formattedYear = computed(() => props.metersYear.toLocaleString())
 
 .stat-row:last-child {
   border-bottom: none;
+}
+
+.stat-row.highlight {
+  background: rgba(255, 215, 0, 0.05);
+  padding: 0.75rem 1rem;
+  margin: 0 -1rem;
+  border-radius: 0.5rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.stat-row.highlight .stat-label {
+  color: #ffd700;
+}
+
+.stat-row.highlight .stat-value {
+  color: #ffd700;
 }
 
 .stat-label {
