@@ -134,6 +134,12 @@ async function apiRequest(endpoint) {
     })
     console.log(`API Request (via proxy): ${endpoint}`)
     console.log(`Status: ${response.status} ${response.statusText}`)
+    
+    // Log cache headers
+    const etag = response.headers.get('etag')
+    const lastModified = response.headers.get('last-modified')
+    const cacheControl = response.headers.get('cache-control')
+    console.log('Cache headers - ETag:', etag, 'Last-Modified:', lastModified, 'Cache-Control:', cacheControl)
   } catch (err) {
     console.error('Network error calling proxy:', err)
     throw new Error(`Network error fetching ${endpoint}: ${err.message || err}`)
@@ -219,8 +225,8 @@ export async function fetchYearResults(year) {
   return allResults
 }
 
-export async function fetchAllResults() {
-  console.log('fetchAllResults: Starting to fetch all workout results')
+export async function fetchAllResults(updatedAfter = null) {
+  console.log('fetchAllResults: Starting to fetch workout results', updatedAfter ? `(updated after ${updatedAfter})` : '(all)')
   let allResults = []
   let page = 1
   let hasMore = true
@@ -228,7 +234,12 @@ export async function fetchAllResults() {
   while (hasMore) {
     console.log(`fetchAllResults: Fetching page ${page}`)
     try {
-      const data = await apiRequest(`/users/me/results?page=${page}`)
+      let endpoint = `/users/me/results?page=${page}`
+      if (updatedAfter) {
+        endpoint += `&updated_after=${encodeURIComponent(updatedAfter)}`
+      }
+      
+      const data = await apiRequest(endpoint)
       console.log(`fetchAllResults: Page ${page} returned ${data.data?.length || 0} results`)
 
       if (data.data && data.data.length > 0) {

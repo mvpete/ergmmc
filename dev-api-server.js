@@ -72,21 +72,35 @@ app.get('/api/proxy', async (req, res) => {
     return res.status(400).json({ error: 'Path parameter required' })
   }
 
+  // Parse path and its query parameters
+  const [pathOnly, pathQuery] = path.split('?')
+  
   // Security: Validate path to prevent malicious requests
   // Only allow paths starting with /users/me
-  if (!path.startsWith('/users/me')) {
-    console.warn('Blocked potentially malicious API call:', path)
+  if (!pathOnly.startsWith('/users/me')) {
+    console.warn('Blocked potentially malicious API call:', pathOnly)
     return res.status(403).json({ error: 'Forbidden: Invalid API path' })
   }
 
   // Security: Prevent path traversal attacks
-  if (path.includes('..') || path.includes('//')) {
-    console.warn('Blocked path traversal attempt:', path)
+  if (pathOnly.includes('..') || pathOnly.includes('//')) {
+    console.warn('Blocked path traversal attempt:', pathOnly)
     return res.status(403).json({ error: 'Forbidden: Invalid path format' })
   }
 
   try {
-    const apiUrl = `https://log.concept2.com/api${path}`
+    // Combine query params from the path and from the request
+    const allParams = new URLSearchParams(pathQuery || '')
+    
+    // Add any additional query params from the request (except 'path')
+    for (const [key, value] of Object.entries(req.query)) {
+      if (key !== 'path') {
+        allParams.set(key, value)
+      }
+    }
+    
+    const queryString = allParams.toString()
+    const apiUrl = `https://log.concept2.com/api${pathOnly}${queryString ? '?' + queryString : ''}`
     console.log('Proxying request to:', apiUrl)
 
     const response = await fetch(apiUrl, {

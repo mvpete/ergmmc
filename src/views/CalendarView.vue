@@ -79,8 +79,11 @@
                   v-for="(day, dayIndex) in week"
                   :key="dayIndex"
                   class="square"
-                  :class="day ? `level-${day.level}` : 'empty'"
-                  :title="day ? `${day.date}: ${day.meters.toLocaleString()}m` : ''"
+                  :class="[
+                    day ? `level-${day.level}` : 'empty',
+                    { 'milestone': day?.isMilestone, 'projected-milestone': day?.isProjected }
+                  ]"
+                  :title="getDayTitle(day)"
                 ></div>
               </div>
             </div>
@@ -101,7 +104,8 @@ import { computed } from 'vue'
 const props = defineProps({
   allWorkouts: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
-  error: { type: String, default: null }
+  error: { type: String, default: null },
+  settings: { type: Object, default: () => ({}) }
 })
 
 defineEmits(['retry'])
@@ -136,6 +140,74 @@ const years = computed(() => {
   return Array.from(yearSet).sort((a, b) => b - a) // Most recent first
 })
 
+// Calculate milestone dates (days when user hit 1M meters)
+const milestoneDates = computed(() => {
+  const milestones = new Set()
+  const goal = props.settings?.goal || 1_000_000
+  
+  // Sort workouts by date
+  const sorted = [...props.allWorkouts]
+    .filter(w => w.date)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+  
+  let runningTotal = 0
+  let milestoneCount = 0
+  
+  sorted.forEach(w => {
+    const previousTotal = runningTotal
+    runningTotal += w.distance || 0
+    
+    // Check if we crossed a million meter threshold
+    const previousMilestones = Math.floor(previousTotal / goal)
+    const currentMilestones = Math.floor(runningTotal / goal)
+    
+    if (currentMilestones > previousMilestones) {
+      // We hit one or more milestones on this day
+      const date = w.date.split(' ')[0]
+      milestones.add(date)
+      milestoneCount++
+    }
+  })
+  
+  return milestones
+})
+
+// Calculate projected completion date
+const projectedCompletionDate = computed(() => {
+  const goal = props.settings?.goal || 1_000_000
+  const start = new Date(props.settings?.startDate || new Date().getFullYear() + '-01-01')
+  const end = new Date(props.settings?.endDate || new Date().getFullYear() + '-12-31')
+  const now = new Date()
+  
+  // Only calculate if we're within the goal period
+  if (now < start || now > end) return null
+  
+  const totalMeters = props.allWorkouts.reduce((sum, w) => sum + (w.distance || 0), 0)
+  
+  // Only show projection if not yet complete and have some data
+  if (totalMeters >= goal || totalMeters === 0) return null
+  
+  // Calculate days elapsed
+  const daysElapsed = Math.max(1, Math.ceil((now - start) / (1000 * 60 * 60 * 24)))
+  const dailyAverage = totalMeters / daysElapsed
+  
+  if (dailyAverage === 0) return null
+  
+  // Calculate days needed from now
+  const metersRemaining = goal - totalMeters
+  const daysNeeded = Math.ceil(metersRemaining / dailyAverage)
+  
+  const projectedDate = new Date(now)
+  projectedDate.setDate(projectedDate.getDate() + daysNeeded)
+  
+  // Only return if projected date is within the same year
+  if (projectedDate.getFullYear() === end.getFullYear() && projectedDate <= end) {
+    return projectedDate.toISOString().split('T')[0]
+  }
+  
+  return null
+})
+
 function getLevel(meters) {
   if (!meters || meters === 0) return 0
   const ratio = meters / maxDailyMeters.value
@@ -143,6 +215,22 @@ function getLevel(meters) {
   if (ratio <= 0.5) return 2
   if (ratio <= 0.75) return 3
   return 4
+}
+
+function getDayTitle(day) {
+  if (!day) return ''
+  
+  let title = `${day.date}: ${day.meters.toLocaleString()}m`
+  
+  if (day.isMilestone) {
+    title += ' 🏆 MILESTONE: Hit 1 Million Meters!'
+  }
+  
+  if (day.isProjected) {
+    title += ' ⭐ Projected completion date'
+  }
+  
+  return title
 }
 
 function getWeeksForYear(year) {
@@ -163,10 +251,15 @@ function getWeeksForYear(year) {
 
     if (isInYear) {
       const meters = dailyMeters.value[dateStr] || 0
+      const isMilestone = milestoneDates.value.has(dateStr)
+      const isProjected = dateStr === projectedCompletionDate.value
+      
       currentWeek.push({
         date: dateStr,
         meters,
-        level: getLevel(meters)
+        level: getLevel(meters),
+        isMilestone,
+        isProjected
       })
     } else if (currentDate < startDate) {
       currentWeek.push(null)
@@ -570,6 +663,70 @@ const longestStreak = computed(() => {
 
 .square.level-4 {
   background: #34d399;
+}
+
+.square.milestone {
+  background: gold !important;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+  position: relative;
+}
+
+.square.milestone::after {
+  content: '🏆';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.square.milestone:hover::after {
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .square.milestone {
+    box-shadow: 0 0 3px rgba(255, 215, 0, 0.8);
+  }
+  
+  .square.milestone::after {
+    font-size: 3px;
+  }
+}
+
+.square.projected-milestone {
+  background: rgba(255, 215, 0, 0.3) !important;
+  border: 1px solid rgba(255, 215, 0, 0.6);
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+  position: relative;
+}
+
+.square.projected-milestone::after {
+  content: '⭐';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.square.projected-milestone:hover::after {
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .square.projected-milestone {
+    border: 0.5px solid rgba(255, 215, 0, 0.6);
+    box-shadow: 0 0 2px rgba(255, 215, 0, 0.4);
+  }
+  
+  .square.projected-milestone::after {
+    font-size: 3px;
+  }
 }
 
 .square:not(.empty):hover {

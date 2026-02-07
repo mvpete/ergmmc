@@ -38,6 +38,7 @@
           :goal="settings.goal"
           :start-date="settings.startDate"
           :end-date="settings.endDate"
+          :settings="settings"
           :meters-today="metersToday"
           :meters-week="metersWeek"
           :meters-month="metersMonth"
@@ -77,6 +78,8 @@ import {
 } from './services/concept2Api.js'
 
 const SETTINGS_KEY = 'mmc_settings'
+const WORKOUTS_CACHE_KEY = 'mmc_workouts_cache'
+const LAST_SYNC_KEY = 'mmc_last_sync_utc'
 
 function getDefaultSettings() {
   const year = new Date().getFullYear()
@@ -97,6 +100,46 @@ function loadSettings() {
     }
   }
   return getDefaultSettings()
+}
+
+function loadCachedWorkouts() {
+  try {
+    const cached = localStorage.getItem(WORKOUTS_CACHE_KEY)
+    if (cached) {
+      const workouts = JSON.parse(cached)
+      console.log('Loaded', workouts.length, 'workouts from cache')
+      return workouts
+    }
+  } catch (err) {
+    console.error('Error loading cache:', err)
+  }
+  return null
+}
+
+function saveCachedWorkouts(workouts) {
+  try {
+    localStorage.setItem(WORKOUTS_CACHE_KEY, JSON.stringify(workouts))
+    console.log('Cached', workouts.length, 'workouts')
+  } catch (err) {
+    console.error('Error saving cache:', err)
+  }
+}
+
+function getLastSync() {
+  return localStorage.getItem(LAST_SYNC_KEY) || '2020-01-01 00:00:00'
+}
+
+function setLastSync() {
+  // Format: YYYY-MM-DD HH:MM:SS in UTC
+  const now = new Date()
+  const formatted = now.toISOString().replace('T', ' ').slice(0, 19)
+  localStorage.setItem(LAST_SYNC_KEY, formatted)
+  console.log('Updated last sync time to:', formatted)
+}
+
+function clearWorkoutsCache() {
+  localStorage.removeItem(WORKOUTS_CACHE_KEY)
+  localStorage.removeItem(LAST_SYNC_KEY)
 }
 
 const authenticated = ref(false)
@@ -190,6 +233,7 @@ function connect() {
 
 function disconnect() {
   clearToken()
+  clearWorkoutsCache()
   authenticated.value = false
   allWorkouts.value = []
 }
@@ -225,11 +269,57 @@ async function handleCallback() {
 
 async function loadData() {
   try {
+    // Load cached workouts immediately
+    const cached = loadCachedWorkouts()
+    if (cached && cached.length > 0) {
+      allWorkouts.value = cached
+      loading.value = false
+      
+      // Fetch only updated workouts in background
+      try {
+        const lastSync = getLastSync()
+        console.log('Fetching workouts updated since:', lastSync)
+        const updated = await fetchAllResults(lastSync)
+        
+        if (updated.length > 0) {
+          console.log('Received', updated.length, 'updated workouts')
+          
+          // Merge updated workouts with cached data
+          // Create a map for quick lookup
+          const workoutMap = new Map(cached.map(w => [w.id, w]))
+          
+          // Update or add new workouts
+          updated.forEach(workout => {
+            workoutMap.set(workout.id, workout)
+          })
+          
+          // Convert back to array and sort by date (newest first)
+          const merged = Array.from(workoutMap.values())
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+          
+          allWorkouts.value = merged
+          saveCachedWorkouts(merged)
+          setLastSync()
+          console.log('Cache updated. Total workouts:', merged.length)
+        } else {
+          console.log('No updated workouts')
+          setLastSync()
+        }
+      } catch (err) {
+        console.error('Background refresh failed:', err)
+        // Keep showing cached data on error
+      }
+      return
+    }
+    
+    // No cache - do full initial sync
     loading.value = true
     error.value = null
-    console.log('Fetching workout results...')
+    console.log('Performing initial sync of all workouts...')
     allWorkouts.value = await fetchAllResults()
-    console.log('Workouts loaded:', allWorkouts.value.length)
+    saveCachedWorkouts(allWorkouts.value)
+    setLastSync()
+    console.log('Initial sync complete:', allWorkouts.value.length, 'workouts')
   } catch (err) {
     console.error('Load data error:', err)
     // If token was cleared due to auth failure, kick user out

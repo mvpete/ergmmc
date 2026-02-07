@@ -81,6 +81,12 @@ module.exports = async function (context, req) {
     });
 
     context.log('Concept2 API response status:', response.status);
+    
+    // Log cache-related headers
+    const etag = response.headers.get('etag');
+    const lastModified = response.headers.get('last-modified');
+    const cacheControl = response.headers.get('cache-control');
+    context.log('Cache headers - ETag:', etag, 'Last-Modified:', lastModified, 'Cache-Control:', cacheControl);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -100,6 +106,18 @@ module.exports = async function (context, req) {
     }
 
     const data = await response.json();
+    
+    // Pass through cache headers to client
+    if (etag) {
+      context.res.headers['ETag'] = etag;
+    }
+    if (lastModified) {
+      context.res.headers['Last-Modified'] = lastModified;
+    }
+    if (cacheControl) {
+      context.res.headers['Cache-Control'] = cacheControl;
+    }
+    
     context.res.status = 200;
     context.res.body = data;
   } catch (error) {
