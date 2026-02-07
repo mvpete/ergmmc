@@ -39,6 +39,7 @@
 
       <div class="modal-footer">
         <button class="btn btn-secondary" @click="$emit('close')">Cancel</button>
+        <button class="btn btn-danger" @click="resync">Resync</button>
         <button class="btn btn-primary" @click="save">Save</button>
       </div>
     </div>
@@ -55,7 +56,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'save'])
+const emit = defineEmits(['close', 'save', 'resync'])
 
 const localSettings = reactive({
   goal: props.settings.goal,
@@ -71,6 +72,12 @@ watch(() => props.settings, (newSettings) => {
 
 function save() {
   emit('save', { ...localSettings })
+}
+
+function resync() {
+  if (confirm('This will clear the cache and re-download all workout data. Continue?')) {
+    emit('resync')
+  }
 }
 </script>
 
@@ -191,7 +198,7 @@ function save() {
 
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
   border-top: 1px solid #374151;
@@ -201,6 +208,7 @@ function save() {
   .modal-footer {
     padding: 0.875rem 1rem;
     gap: 0.5rem;
+    flex-wrap: wrap;
   }
 }
 
@@ -239,5 +247,17 @@ function save() {
 
 .btn-primary:hover {
   background: #059669;
+}
+
+.btn-danger {
+  background: transparent;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #dc2626;
+  color: #dc2626;
 }
 </style>

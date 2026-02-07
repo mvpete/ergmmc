@@ -59,6 +59,7 @@
         :settings="settings"
         @close="showSettings = false"
         @save="saveSettings"
+        @resync="handleResync"
       />
     </template>
   </div>
@@ -242,6 +243,13 @@ function saveSettings(newSettings) {
   Object.assign(settings, newSettings)
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
   showSettings.value = false
+}
+
+async function handleResync() {
+  clearWorkoutsCache()
+  allWorkouts.value = []
+  showSettings.value = false
+  await loadData()
 }
 
 async function handleCallback() {
