@@ -74,27 +74,23 @@
           :percentage="percentage"
           :size="circleSize"
           :stroke-width="circleStrokeWidth"
-          :color="onTrack ? '#4ade80' : '#f87171'"
+          :color="statusColor"
         >
           <div class="meters">{{ formattedMeters }}</div>
           <div class="meters-label">meters</div>
           <div class="goal">of {{ formattedGoal }}</div>
-          <div class="status" :class="{ 'on-track': onTrack, 'behind': !onTrack }">
-            {{ onTrack ? 'On Track' : 'Behind' }}
+          <div class="status" :class="statusClass">
+            {{ statusText }}
           </div>
           <div class="expected">Expected: {{ formattedExpected }}</div>
         </CircularProgress>
         
-        <div v-if="!onTrack && behindMessage" class="behind-message">
+        <div v-if="onTrack === false && behindMessage" class="behind-message">
           {{ behindMessage }}
         </div>
         
-        <div v-if="onTrack && aheadMessage" class="ahead-message">
+        <div v-if="onTrack === true && aheadMessage" class="ahead-message">
           {{ aheadMessage }}
-        </div>
-        
-        <div v-if="nextMillionMessage" class="milestone-message">
-          {{ nextMillionMessage }}
         </div>
         
         <div class="stats-table">
@@ -114,7 +110,7 @@
             <span class="stat-label">This Year</span>
             <span class="stat-value">{{ formattedYear }}</span>
           </div>
-          <div v-if="projectedMillionText" class="stat-row highlight">
+          <div v-if="projectedMillionText" class="stat-row">
             <span class="stat-label">{{ projectedMillionText }}</span>
             <span class="stat-value">{{ projectedMillionDate }}</span>
           </div>
@@ -254,7 +250,36 @@ const expectedMeters = computed(() => {
   return Math.round((daysPassed / totalDays) * props.goal)
 })
 
-const onTrack = computed(() => props.totalMeters >= expectedMeters.value)
+const onTrack = computed(() => {
+  const difference = props.totalMeters - expectedMeters.value
+  
+  // Behind if more than 10m behind schedule
+  if (difference < -10_000_000) return false
+  
+  // Ahead if more than 50m ahead of schedule
+  if (difference > 50_000_000) return true
+  
+  // Otherwise on track
+  return 'neutral'
+})
+
+const statusText = computed(() => {
+  if (onTrack.value === false) return 'Behind'
+  if (onTrack.value === true) return 'Ahead'
+  return 'On Track'
+})
+
+const statusClass = computed(() => {
+  if (onTrack.value === false) return 'behind'
+  if (onTrack.value === true) return 'ahead'
+  return 'on-track'
+})
+
+const statusColor = computed(() => {
+  if (onTrack.value === false) return '#f87171' // red
+  if (onTrack.value === true) return '#4ade80' // green
+  return '#60a5fa' // blue for neutral
+})
 
 // Calculate average pace from workouts
 const averagePaceSeconds = computed(() => {
@@ -338,43 +363,6 @@ const aheadMessage = computed(() => {
   } else {
     return `You're ahead of pace! At this rate, you'll be done by ${dateString}.`
   }
-})
-
-// Calculate next million meter milestone
-const nextMillionMessage = computed(() => {
-  if (!props.lifetimeMeters || !props.startDate) return null
-  
-  const now = new Date()
-  const start = parseLocalDate(props.startDate)
-  
-  // Calculate current milestone count and next milestone
-  const currentMillions = Math.floor(props.lifetimeMeters / 1_000_000)
-  const nextMilestone = (currentMillions + 1) * 1_000_000
-  const metersToNextMillion = nextMilestone - props.lifetimeMeters
-  
-  // Don't show if we're at or past a round million
-  if (metersToNextMillion <= 0 || metersToNextMillion >= 1_000_000) return null
-  
-  // Calculate days since start
-  const daysPassed = Math.max(1, Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1)
-  const metersPerDay = props.lifetimeMeters / daysPassed
-  
-  if (metersPerDay === 0) return null
-  
-  // Calculate days needed to reach next million
-  const daysNeeded = Math.ceil(metersToNextMillion / metersPerDay)
-  
-  const projectedDate = new Date(now)
-  projectedDate.setDate(projectedDate.getDate() + daysNeeded)
-  
-  // Format the projected date
-  const opts = { month: 'short', day: 'numeric', year: 'numeric' }
-  const dateString = projectedDate.toLocaleDateString('en-US', opts)
-  
-  const metersFormatted = metersToNextMillion.toLocaleString()
-  const milestoneFormatted = (currentMillions + 1).toLocaleString()
-  
-  return `🏆 ${metersFormatted}m until ${milestoneFormatted} million meters (projected: ${dateString})`
 })
 
 const formattedMeters = computed(() => props.totalMeters.toLocaleString())
@@ -547,27 +535,6 @@ const projectedMillionDate = computed(() => {
   }
 }
 
-.milestone-message {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 0.5rem;
-  color: #ffd700;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  text-align: center;
-  max-width: 400px;
-}
-
-@media (max-width: 640px) {
-  .milestone-message {
-    font-size: 0.8125rem;
-    padding: 0.875rem;
-    margin-top: 1rem;
-  }
-}
-
 .stats-table {
   margin-top: 2rem;
   background: #1f2937;
@@ -595,22 +562,6 @@ const projectedMillionDate = computed(() => {
 
 .stat-row:last-child {
   border-bottom: none;
-}
-
-.stat-row.highlight {
-  background: rgba(255, 215, 0, 0.05);
-  padding: 0.75rem 1rem;
-  margin: 0 -1rem;
-  border-radius: 0.5rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-}
-
-.stat-row.highlight .stat-label {
-  color: #ffd700;
-}
-
-.stat-row.highlight .stat-value {
-  color: #ffd700;
 }
 
 .stat-label {
