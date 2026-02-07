@@ -253,13 +253,13 @@ const expectedMeters = computed(() => {
 const onTrack = computed(() => {
   const difference = props.totalMeters - expectedMeters.value
   
-  // Behind if more than 10m behind schedule
-  if (difference < -10_000_000) return false
+  // Behind if more than 10 meters behind schedule
+  if (difference < -10) return false
   
-  // Ahead if more than 50m ahead of schedule
-  if (difference > 50_000_000) return true
+  // Ahead if more than 50 meters ahead of schedule
+  if (difference > 50) return true
   
-  // Otherwise on track
+  // Otherwise on track (within -10m to +50m range)
   return 'neutral'
 })
 
