@@ -152,7 +152,8 @@ const props = defineProps({
   metersWeek: { type: Number, default: 0 },
   metersMonth: { type: Number, default: 0 },
   metersYear: { type: Number, default: 0 },
-  workouts: { type: Array, default: () => [] }
+  workouts: { type: Array, default: () => [] },
+  allWorkouts: { type: Array, default: () => [] }
 })
 
 defineEmits(['retry'])
@@ -329,7 +330,7 @@ const behindMessage = computed(() => {
 // Calculate ahead message
 const aheadMessage = computed(() => {
   if (!onTrack.value) return null
-  if (!props.startDate || !props.endDate) return null
+  if (!props.startDate || !props.endDate || !props.allWorkouts) return null
   
   const now = new Date()
   const start = parseLocalDate(props.startDate)
@@ -337,11 +338,18 @@ const aheadMessage = computed(() => {
   
   if (now <= start) return null
   
-  const daysPassed = Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1
+  // Find when this year started and calculate meters since then
+  const yearStart = start
+  const yearWorkouts = props.allWorkouts.filter(w => {
+    if (!w.date) return false
+    const workoutDate = new Date(w.date)
+    return workoutDate >= yearStart && workoutDate <= now
+  })
   
-  if (daysPassed === 0) return null
+  const metersSinceStart = yearWorkouts.reduce((sum, w) => sum + (w.distance || 0), 0)
+  const daysSinceStart = Math.max(1, Math.floor((now - yearStart) / (1000 * 60 * 60 * 24)) + 1)
   
-  const metersPerDay = props.totalMeters / daysPassed
+  const metersPerDay = metersSinceStart / daysSinceStart
   
   if (metersPerDay === 0) return null
   
@@ -389,17 +397,69 @@ const projectedMillionText = computed(() => {
 })
 
 const projectedMillionDate = computed(() => {
-  if (!projectedMillionText.value || !props.startDate) return null
+  if (!projectedMillionText.value || !props.allWorkouts) return null
   
   const now = new Date()
-  const start = parseLocalDate(props.startDate)
   
   const currentMillions = Math.floor(props.lifetimeMeters / 1_000_000)
+  const lastMilestone = currentMillions * 1_000_000
   const nextMilestone = (currentMillions + 1) * 1_000_000
   const metersToNextMillion = nextMilestone - props.lifetimeMeters
   
-  const daysPassed = Math.max(1, Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1)
-  const metersPerDay = props.lifetimeMeters / daysPassed
+  // Calculate meters rowed since last milestone
+  const metersSinceLastMillion = props.lifetimeMeters - lastMilestone
+  
+  if (metersSinceLastMillion === 0) return null
+  
+  // Find when we crossed the last milestone
+  // Sort workouts by date (oldest first)
+  const sorted = [...props.allWorkouts]
+    .filter(w => w.date)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+  
+  let runningTotal = 0
+  let milestoneDate = null
+  
+  // Find the workout where we crossed the last million threshold
+  for (const workout of sorted) {
+    const previousTotal = runningTotal
+    runningTotal += workout.distance || 0
+    
+    // Check if we crossed the last milestone with this workout
+    if (previousTotal < lastMilestone && runningTotal >= lastMilestone) {
+      milestoneDate = new Date(workout.date)
+      break
+    }
+  }
+  
+  // If we can't find the milestone date (e.g., first million), use earliest workout or start date
+  if (!milestoneDate) {
+    if (sorted.length > 0) {
+      // Find workouts after we had already passed the last milestone
+      // Work backwards from current total
+      runningTotal = props.lifetimeMeters
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        runningTotal -= sorted[i].distance || 0
+        if (runningTotal <= lastMilestone) {
+          milestoneDate = new Date(sorted[i].date)
+          break
+        }
+      }
+    }
+    
+    // If still no date, use start date as fallback
+    if (!milestoneDate && props.startDate) {
+      milestoneDate = parseLocalDate(props.startDate)
+    }
+    
+    if (!milestoneDate) return null
+  }
+  
+  // Calculate days since last milestone
+  const daysSinceLastMillion = Math.max(1, Math.floor((now - milestoneDate) / (1000 * 60 * 60 * 24)) + 1)
+  
+  // Calculate daily average since last million
+  const metersPerDay = metersSinceLastMillion / daysSinceLastMillion
   
   if (metersPerDay === 0) return null
   
