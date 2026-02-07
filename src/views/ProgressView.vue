@@ -93,6 +93,10 @@
           {{ aheadMessage }}
         </div>
         
+        <div v-if="nextMillionMessage" class="milestone-message">
+          {{ nextMillionMessage }}
+        </div>
+        
         <div class="stats-table">
           <div class="stat-row">
             <span class="stat-label">Today</span>
@@ -332,6 +336,43 @@ const aheadMessage = computed(() => {
   }
 })
 
+// Calculate next million meter milestone
+const nextMillionMessage = computed(() => {
+  if (!props.lifetimeMeters || !props.startDate) return null
+  
+  const now = new Date()
+  const start = parseLocalDate(props.startDate)
+  
+  // Calculate current milestone count and next milestone
+  const currentMillions = Math.floor(props.lifetimeMeters / 1_000_000)
+  const nextMilestone = (currentMillions + 1) * 1_000_000
+  const metersToNextMillion = nextMilestone - props.lifetimeMeters
+  
+  // Don't show if we're at or past a round million
+  if (metersToNextMillion <= 0 || metersToNextMillion >= 1_000_000) return null
+  
+  // Calculate days since start
+  const daysPassed = Math.max(1, Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1)
+  const metersPerDay = props.lifetimeMeters / daysPassed
+  
+  if (metersPerDay === 0) return null
+  
+  // Calculate days needed to reach next million
+  const daysNeeded = Math.ceil(metersToNextMillion / metersPerDay)
+  
+  const projectedDate = new Date(now)
+  projectedDate.setDate(projectedDate.getDate() + daysNeeded)
+  
+  // Format the projected date
+  const opts = { month: 'short', day: 'numeric', year: 'numeric' }
+  const dateString = projectedDate.toLocaleDateString('en-US', opts)
+  
+  const metersFormatted = metersToNextMillion.toLocaleString()
+  const milestoneFormatted = (currentMillions + 1).toLocaleString()
+  
+  return `🏆 ${metersFormatted}m until ${milestoneFormatted} million meters (projected: ${dateString})`
+})
+
 const formattedMeters = computed(() => props.totalMeters.toLocaleString())
 const formattedGoal = computed(() => props.goal.toLocaleString())
 const formattedExpected = computed(() => expectedMeters.value.toLocaleString())
@@ -459,6 +500,27 @@ const formattedYear = computed(() => props.metersYear.toLocaleString())
 
 @media (max-width: 640px) {
   .ahead-message {
+    font-size: 0.8125rem;
+    padding: 0.875rem;
+    margin-top: 1rem;
+  }
+}
+
+.milestone-message {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 0.5rem;
+  color: #ffd700;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: center;
+  max-width: 400px;
+}
+
+@media (max-width: 640px) {
+  .milestone-message {
     font-size: 0.8125rem;
     padding: 0.875rem;
     margin-top: 1rem;
