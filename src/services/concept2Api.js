@@ -170,7 +170,7 @@ async function apiRequest(endpoint) {
           const retryResponse = await fetch(proxyUrl, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${newTokenData.access_token}`,
+              'X-Concept2-Token': newTokenData.access_token,
               'Accept': 'application/json'
             }
           })

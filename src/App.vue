@@ -74,6 +74,7 @@ import {
   saveToken,
   clearToken,
   isAuthenticated,
+  getValidToken,
   fetchAllResults,
   calculateTotalMeters
 } from './services/concept2Api.js'
@@ -348,7 +349,16 @@ onMounted(async () => {
     await handleCallback()
   } else if (isAuthenticated()) {
     authenticated.value = true
-    await loadData()
+    // Try to get a valid token (will refresh if needed)
+    try {
+      await getValidToken()
+      await loadData()
+    } catch (err) {
+      console.error('Token validation failed on mount:', err)
+      // Token is invalid and couldn't be refreshed
+      authenticated.value = false
+      clearToken()
+    }
   }
 })
 </script>
