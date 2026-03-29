@@ -479,8 +479,9 @@ const projectedMillionDate = computed(() => {
   align-items: center;
   gap: 2rem;
   padding: 1rem;
-  max-width: 600px;
+  max-width: 900px;
   margin: 0 auto;
+  width: 100%;
 }
 
 @media (max-width: 640px) {

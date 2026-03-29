@@ -395,11 +395,14 @@ onMounted(async () => {
   background: #1f2937;
   border-radius: 0.5rem;
   padding: 0.25rem;
+  width: 100%;
+  max-width: 900px;
 }
 
 @media (max-width: 640px) {
   .tabs {
     width: calc(100% - 2rem);
+    max-width: none;
     margin-left: 1rem;
     margin-right: 1rem;
   }

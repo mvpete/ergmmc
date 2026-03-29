@@ -30,46 +30,61 @@
         <span class="workout-count">{{ allWorkouts.length }} sessions</span>
       </div>
 
-      <div class="list-container">
-      <table>
-        <thead>
-          <tr>
-            <th><span class="full">Date</span><span class="abbr">Date</span></th>
-            <th><span class="full">Distance</span><span class="abbr">Dist</span></th>
-            <th><span class="full">Time</span><span class="abbr">Time</span></th>
-            <th><span class="full">Avg Pace</span><span class="abbr">Pace</span></th>
-            <th><span class="full">Avg HR</span><span class="abbr">HR</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="workout in sortedWorkouts" :key="workout.id">
-            <td class="date">{{ formatDate(workout.date) }}</td>
-            <td class="distance">{{ formatDistance(workout.distance) }}</td>
-            <td class="time">{{ workout.time_formatted || formatTime(workout.time) }}</td>
-            <td class="pace">{{ calculatePace(workout) }}</td>
-            <td class="hr">{{ formatHeartRate(workout) }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <div class="averages-section">
+        <h3 class="averages-title">AVERAGES</h3>
+        <table class="averages-table">
+          <thead>
+            <tr>
+              <th>
+                Distance
+                <span v-if="distanceTrend" class="pace-arrow" :class="distanceTrend">{{ distanceTrendArrow }}</span>
+              </th>
+              <th>
+                Time
+                <span v-if="timeTrend" class="pace-arrow" :class="timeTrend">{{ timeTrendArrow }}</span>
+              </th>
+              <th>
+                Pace (/500m)
+                <span v-if="paceTrend" class="pace-arrow" :class="paceTrend">{{ paceTrendArrow }}</span>
+              </th>
+              <th>
+                HR (bpm)
+                <span v-if="hrTrend" class="pace-arrow" :class="hrTrend">{{ hrTrendArrow }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ formatDistanceNoUnit(avgDistance) }}</td>
+              <td>{{ formatAvgTime(avgTime) }}</td>
+              <td>{{ formatPaceNoUnit(overallAvgPace) }}</td>
+              <td>{{ formatHRNoUnit(overallAvgHR) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <div class="totals">
-        <div class="total-item">
-          <span class="total-label">Total Distance</span>
-          <span class="total-value">{{ formatDistance(totalDistance) }}</span>
-        </div>
-        <div class="total-item">
-          <span class="total-label">Total Time</span>
-          <span class="total-value">{{ formatTotalTime(totalTime) }}</span>
-        </div>
-        <div class="total-item">
-          <span class="total-label">Avg Pace</span>
-          <span class="total-value">{{ overallAvgPace }}</span>
-        </div>
-        <div class="total-item">
-          <span class="total-label">Avg HR</span>
-          <span class="total-value">{{ overallAvgHR }}</span>
-        </div>
+      <div class="list-container">
+        <table>
+          <thead>
+            <tr>
+              <th><span class="full">Date</span><span class="abbr">Date</span></th>
+              <th><span class="full">Distance</span><span class="abbr">Dist</span></th>
+              <th><span class="full">Time</span><span class="abbr">Time</span></th>
+              <th><span class="full">Avg Pace</span><span class="abbr">Pace</span></th>
+              <th><span class="full">Avg HR</span><span class="abbr">HR</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="workout in sortedWorkouts" :key="workout.id">
+              <td class="date">{{ formatDate(workout.date) }}</td>
+              <td class="distance">{{ formatDistance(workout.distance) }}</td>
+              <td class="time">{{ workout.time_formatted || formatTime(workout.time) }}</td>
+              <td class="pace">{{ calculatePace(workout) }}</td>
+              <td class="hr">{{ formatHeartRate(workout) }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </template>
   </div>
@@ -86,6 +101,136 @@ const props = defineProps({
 
 defineEmits(['retry'])
 
+// Calculate pace trend (comparing recent vs earlier workouts)
+const paceTrend = computed(() => {
+  const workoutsWithPace = props.allWorkouts
+    .filter(w => w.time && w.distance && w.date)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+  
+  if (workoutsWithPace.length < 4) return null
+  
+  // Split into two halves
+  const midpoint = Math.floor(workoutsWithPace.length / 2)
+  const firstHalf = workoutsWithPace.slice(0, midpoint)
+  const secondHalf = workoutsWithPace.slice(midpoint)
+  
+  const calcAvgPace = (workouts) => {
+    const totalTime = workouts.reduce((sum, w) => sum + w.time / 10, 0)
+    const totalDist = workouts.reduce((sum, w) => sum + w.distance, 0)
+    return totalDist > 0 ? (totalTime / totalDist) * 500 : 0
+  }
+  
+  const firstHalfPace = calcAvgPace(firstHalf)
+  const secondHalfPace = calcAvgPace(secondHalf)
+  
+  const diff = firstHalfPace - secondHalfPace
+  
+  // Improving (getting faster) = positive diff (first half was slower, second half faster)
+  // Lower pace time is better, so if recent pace < old pace, that's improving
+  // Threshold: 1 second per 500m
+  if (diff > 1) return 'improving' // Recent pace is faster (lower number)
+  if (diff < -1) return 'declining' // Recent pace is slower (higher number)
+  return 'stable' // About the same
+})
+
+const paceTrendArrow = computed(() => {
+  if (!paceTrend.value) return ''
+  if (paceTrend.value === 'improving') return '↘' // Down = good (getting faster)
+  if (paceTrend.value === 'declining') return '↗' // Up = bad (getting slower)
+  return '→' // Straight = neutral
+})
+
+// Distance trend (avg distance per session)
+const distanceTrend = computed(() => {
+  const workouts = props.allWorkouts
+    .filter(w => w.distance && w.date)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+  
+  if (workouts.length < 4) return null
+  
+  const midpoint = Math.floor(workouts.length / 2)
+  const firstHalf = workouts.slice(0, midpoint)
+  const secondHalf = workouts.slice(midpoint)
+  
+  const firstAvg = firstHalf.reduce((sum, w) => sum + w.distance, 0) / firstHalf.length
+  const secondAvg = secondHalf.reduce((sum, w) => sum + w.distance, 0) / secondHalf.length
+  
+  const diff = secondAvg - firstAvg
+  const threshold = 100 // 100 meters threshold
+  
+  if (diff > threshold) return 'improving' // More distance = better
+  if (diff < -threshold) return 'declining' // Less distance = worse
+  return 'stable'
+})
+
+const distanceTrendArrow = computed(() => {
+  if (!distanceTrend.value) return ''
+  if (distanceTrend.value === 'improving') return '↗' // Up = more distance = good
+  if (distanceTrend.value === 'declining') return '↘' // Down = less distance = bad
+  return '→'
+})
+
+// Time trend (avg time per session)
+const timeTrend = computed(() => {
+  const workouts = props.allWorkouts
+    .filter(w => w.time && w.date)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+  
+  if (workouts.length < 4) return null
+  
+  const midpoint = Math.floor(workouts.length / 2)
+  const firstHalf = workouts.slice(0, midpoint)
+  const secondHalf = workouts.slice(midpoint)
+  
+  const firstAvg = firstHalf.reduce((sum, w) => sum + w.time / 10, 0) / firstHalf.length
+  const secondAvg = secondHalf.reduce((sum, w) => sum + w.time / 10, 0) / secondHalf.length
+  
+  const diff = secondAvg - firstAvg
+  const threshold = 60 // 60 seconds threshold
+  
+  if (diff > threshold) return 'improving' // More time = better
+  if (diff < -threshold) return 'declining' // Less time = worse
+  return 'stable'
+})
+
+const timeTrendArrow = computed(() => {
+  if (!timeTrend.value) return ''
+  if (timeTrend.value === 'improving') return '↗' // Up = more time = good
+  if (timeTrend.value === 'declining') return '↘' // Down = less time = bad
+  return '→'
+})
+
+// HR trend (avg heart rate)
+const hrTrend = computed(() => {
+  const workouts = props.allWorkouts
+    .filter(w => w.heart_rate?.average && w.date)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+  
+  if (workouts.length < 4) return null
+  
+  const midpoint = Math.floor(workouts.length / 2)
+  const firstHalf = workouts.slice(0, midpoint)
+  const secondHalf = workouts.slice(midpoint)
+  
+  const firstAvg = firstHalf.reduce((sum, w) => sum + w.heart_rate.average, 0) / firstHalf.length
+  const secondAvg = secondHalf.reduce((sum, w) => sum + w.heart_rate.average, 0) / secondHalf.length
+  
+  const diff = secondAvg - firstAvg
+  const threshold = 2 // 2 bpm threshold
+  
+  // Lower HR at same effort = better fitness, but we're just showing raw trend
+  if (Math.abs(diff) <= threshold) return 'stable'
+  if (diff > 0) return 'declining' // HR going up
+  return 'improving' // HR going down
+})
+
+const hrTrendArrow = computed(() => {
+  if (!hrTrend.value) return ''
+  if (hrTrend.value === 'improving') return '↘' // Down HR = good
+  if (hrTrend.value === 'declining') return '↗' // Up HR = bad
+  return '→'
+})
+
 const sortedWorkouts = computed(() => {
   return [...props.allWorkouts].sort((a, b) => {
     return new Date(b.date) - new Date(a.date)
@@ -96,8 +241,18 @@ const totalDistance = computed(() => {
   return props.allWorkouts.reduce((sum, w) => sum + (w.distance || 0), 0)
 })
 
+const avgDistance = computed(() => {
+  if (props.allWorkouts.length === 0) return 0
+  return Math.round(totalDistance.value / props.allWorkouts.length)
+})
+
 const totalTime = computed(() => {
   return props.allWorkouts.reduce((sum, w) => sum + (w.time || 0), 0)
+})
+
+const avgTime = computed(() => {
+  if (props.allWorkouts.length === 0) return 0
+  return totalTime.value / props.allWorkouts.length
 })
 
 const overallAvgPace = computed(() => {
@@ -150,6 +305,19 @@ function formatTotalTime(tenths) {
   return `${hours}h ${minutes}m`
 }
 
+function formatAvgTime(tenths) {
+  if (!tenths) return '--'
+  const totalSeconds = Math.floor(tenths / 10)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
 function calculatePace(workout) {
   if (!workout.time || !workout.distance) return '--'
   const paceSeconds = (workout.time / 10) / (workout.distance / 500)
@@ -165,6 +333,21 @@ function formatPaceSeconds(seconds) {
 function formatHeartRate(workout) {
   if (!workout.heart_rate?.average) return '--'
   return workout.heart_rate.average + ' bpm'
+}
+
+function formatDistanceNoUnit(meters) {
+  if (!meters) return '--'
+  return meters.toLocaleString()
+}
+
+function formatPaceNoUnit(paceStr) {
+  if (!paceStr || paceStr === '--') return '--'
+  return paceStr.replace('/500m', '')
+}
+
+function formatHRNoUnit(hrStr) {
+  if (!hrStr || hrStr === '--') return '--'
+  return hrStr.replace(' bpm', '')
 }
 </script>
 
@@ -381,58 +564,89 @@ tr:hover td {
   color: #f87171;
 }
 
-.totals {
-  display: flex;
-  gap: 2rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
+.averages-section {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-top: 1rem;
   border-top: 1px solid #374151;
-  flex-wrap: wrap;
 }
 
-@media (max-width: 640px) {
-  .totals {
-    gap: 1rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-  }
-}
-
-.total-item {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 100px;
-}
-
-@media (max-width: 640px) {
-  .total-item {
-    min-width: 80px;
-  }
-}
-
-.total-label {
-  font-size: 0.75rem;
+.averages-title {
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #9ca3af;
+  margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
+.averages-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.averages-table th {
+  padding: 0.375rem 0.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 500;
+  border-bottom: 1px solid #374151;
+}
+
+.averages-table td {
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
 @media (max-width: 640px) {
-  .total-label {
+  .averages-section {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding-top: 0.75rem;
+  }
+  
+  .averages-title {
+    font-size: 0.75rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .averages-table th {
     font-size: 0.625rem;
+    padding: 0.375rem 0.25rem;
+  }
+  
+  .averages-table td {
+    font-size: 1rem;
+    padding: 0.5rem 0.25rem;
   }
 }
 
-.total-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-top: 0.25rem;
+.pace-arrow {
+  font-size: 0.875rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pace-arrow.improving {
+  color: #22c55e;
+}
+
+.pace-arrow.declining {
+  color: #ef4444;
+}
+
+.pace-arrow.stable {
+  color: #3b82f6;
 }
 
 @media (max-width: 640px) {
-  .total-value {
-    font-size: 1.125rem;
+  .pace-arrow {
+    font-size: 0.75rem;
   }
 }
 </style>
