@@ -38,9 +38,8 @@ export async function exchangeCodeForToken(code) {
   return tokenData
 }
 
-async function refreshAccessToken(refreshToken) {
-  // Note: Refresh still needs to go through the API endpoint
-  // For now, we'll keep the direct call but you may want to add a refresh endpoint too
+export async function refreshAccessToken(refreshToken) {
+  console.log('Attempting to refresh token...')
   const response = await fetch(TOKEN_API, {
     method: 'POST',
     headers: {
@@ -53,15 +52,24 @@ async function refreshAccessToken(refreshToken) {
   })
 
   if (!response.ok) {
-    throw new Error('Failed to refresh token')
+    const errorText = await response.text()
+    console.error('Token refresh failed:', response.status, errorText)
+    throw new Error(`${response.status}: ${errorText}`)
   }
 
   const tokenData = await response.json()
+  console.log('Token refresh successful, new token obtained')
   tokenData.obtained_at = Date.now()
   return tokenData
 }
 
 export function saveToken(tokenData) {
+  console.log('Saving token data:', {
+    hasAccessToken: !!tokenData.access_token,
+    hasRefreshToken: !!tokenData.refresh_token,
+    expiresIn: tokenData.expires_in,
+    obtainedAt: tokenData.obtained_at
+  })
   localStorage.setItem('concept2_token', JSON.stringify(tokenData))
 }
 
@@ -76,7 +84,13 @@ export function clearToken() {
 
 function isTokenExpired(tokenData) {
   if (!tokenData || !tokenData.obtained_at || !tokenData.expires_in) {
-    return false // Can't determine, assume valid
+    // If we can't determine expiry, consider tokens older than 2 hours as expired
+    // Concept2 access tokens expire after 2 hours
+    if (tokenData && tokenData.obtained_at) {
+      const twoHoursInMs = 2 * 60 * 60 * 1000
+      return Date.now() > (tokenData.obtained_at + twoHoursInMs - 5 * 60 * 1000)
+    }
+    return true // No obtained_at timestamp, treat as expired
   }
   const expiresAt = tokenData.obtained_at + (tokenData.expires_in * 1000)
   // Consider expired 5 minutes before actual expiry
@@ -90,12 +104,22 @@ export async function getValidToken() {
     throw new Error('Not authenticated')
   }
 
+  console.log('Token check:', {
+    hasRefreshToken: !!tokenData.refresh_token,
+    obtainedAt: tokenData.obtained_at ? new Date(tokenData.obtained_at).toISOString() : 'missing',
+    expiresIn: tokenData.expires_in || 'missing',
+    isExpired: isTokenExpired(tokenData)
+  })
+
   // Check if token is expired or about to expire
   if (isTokenExpired(tokenData) && tokenData.refresh_token) {
+    console.log('Token expired or expiring soon, refreshing...')
     try {
       tokenData = await refreshAccessToken(tokenData.refresh_token)
       saveToken(tokenData)
+      console.log('Token refreshed successfully')
     } catch (err) {
+      console.error('Failed to refresh token:', err)
       clearToken()
       throw new Error('Session expired. Please reconnect.')
     }

@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const { exchangeToken } = require('../shared/tokenExchange');
 
 module.exports = async function (context, req) {
   context.log('Token exchange endpoint called');
@@ -29,13 +30,6 @@ module.exports = async function (context, req) {
 
   context.log('Token request - grant_type:', grant_type, 'has code:', !!code, 'has refresh_token:', !!refresh_token);
 
-  if (!code && !refresh_token) {
-    context.log.error('Token request missing both code and refresh_token');
-    context.res.status = 400;
-    context.res.body = { error: 'Authorization code or refresh token is required' };
-    return;
-  }
-
   try {
     const clientId = process.env.CONCEPT2_CLIENT_ID;
     const clientSecret = process.env.CONCEPT2_CLIENT_SECRET;
@@ -48,56 +42,28 @@ module.exports = async function (context, req) {
       return;
     }
 
-    // Exchange code for token or refresh token
-    const tokenUrl = 'https://log.concept2.com/oauth/access_token';
-    
-    let params;
-    if (grant_type === 'refresh_token' && refresh_token) {
-      params = new URLSearchParams({
-        grant_type: 'refresh_token',
-        client_id: clientId,
-        client_secret: clientSecret,
-        refresh_token: refresh_token
-      });
-    } else {
-      if (!redirectUri) {
-        context.log.error('Missing redirect URI');
-        context.res.status = 500;
-        context.res.body = { error: 'Server configuration error' };
-        return;
-      }
-      params = new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: clientId,
-        client_secret: clientSecret,
-        code: code,
-        redirect_uri: redirectUri
-      });
-    }
-
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: params.toString()
+    const data = await exchangeToken(fetch, {
+      code,
+      refresh_token,
+      grant_type,
+      clientId,
+      clientSecret,
+      redirectUri
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      context.log.error('Token exchange failed:', errorText);
-      context.res.status = response.status;
-      context.res.body = { error: 'Failed to exchange token' };
-      return;
-    }
-
-    const data = await response.json();
-    
     context.res.status = 200;
     context.res.body = data;
   } catch (error) {
-    context.log.error('Error exchanging token:', error);
-    context.res.status = 500;
-    context.res.body = { error: 'Internal server error' };
+    if (error.statusCode) {
+      // Error from exchangeToken
+      context.log.error('Token exchange failed:', error.body);
+      context.res.status = error.statusCode;
+      context.res.body = error.body;
+    } else {
+      // Unexpected error
+      context.log.error('Error exchanging token:', error);
+      context.res.status = 500;
+      context.res.body = { error: 'Internal server error' };
+    }
   }
 };

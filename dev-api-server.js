@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import { exchangeToken } from './shared/tokenExchange.mjs'
 
 const app = express()
 app.use(cors())
@@ -12,50 +13,27 @@ const REDIRECT_URI = process.env.CONCEPT2_REDIRECT_URI || 'http://localhost:5173
 app.post('/api/token', async (req, res) => {
   const { code, refresh_token, grant_type = 'authorization_code' } = req.body
 
-  if (!code && !refresh_token) {
-    return res.status(400).json({ error: 'Authorization code or refresh token is required' })
-  }
-
   try {
-    const tokenUrl = 'https://log.concept2.com/oauth/access_token'
-    
-    let params
-    if (grant_type === 'refresh_token' && refresh_token) {
-      params = new URLSearchParams({
-        grant_type: 'refresh_token',
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        refresh_token: refresh_token
-      })
-    } else {
-      params = new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        code: code,
-        redirect_uri: REDIRECT_URI
-      })
-    }
-
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: params.toString()
+    const data = await exchangeToken(fetch, {
+      code,
+      refresh_token,
+      grant_type,
+      clientId: CLIENT_ID,
+      clientSecret: CLIENT_SECRET,
+      redirectUri: REDIRECT_URI
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Token exchange failed:', errorText)
-      return res.status(response.status).json({ error: 'Failed to exchange token' })
-    }
-
-    const data = await response.json()
     res.json(data)
   } catch (error) {
-    console.error('Error exchanging token:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    if (error.statusCode) {
+      // Error from exchangeToken
+      console.error('Token exchange failed:', error.body)
+      return res.status(error.statusCode).json(error.body)
+    } else {
+      // Unexpected error
+      console.error('Error exchanging token:', error)
+      res.status(500).json({ error: 'Internal server error' })
+    }
   }
 })
 

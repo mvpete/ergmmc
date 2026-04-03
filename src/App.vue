@@ -75,6 +75,8 @@ import {
   clearToken,
   isAuthenticated,
   getValidToken,
+  getToken,
+  refreshAccessToken,
   fetchAllResults,
   calculateTotalMeters
 } from './services/concept2Api.js'
